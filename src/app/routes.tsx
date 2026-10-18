@@ -91,7 +91,8 @@ import { KacchiProductionKhata } from './pages/bhatta/KacchiProductionKhata';
 import { PakkiBhattiLaborKhata } from './pages/bhatta/PakkiBhattiLaborKhata';
 import { WorkerAdvanceSettlement } from './pages/bhatta/WorkerAdvanceSettlement';
 import { DailyExpensesKhata } from './pages/bhatta/DailyExpensesKhata';
-import { MattiFuelKhata } from './pages/bhatta/MattiFuelKhata';
+import { MattiKhata } from './pages/bhatta/MattiKhata';
+import { FuelKhata } from './pages/bhatta/FuelKhata';
 import { StockInventory } from './pages/bhatta/StockInventory';
 import { CustomerLedger } from './pages/bhatta/CustomerLedger';
 import { SalesInvoiceBilling } from './pages/bhatta/SalesInvoiceBilling';
@@ -128,7 +129,9 @@ export const router = createBrowserRouter([
           { path: 'bhatta/bhatti', Component: PakkiBhattiLaborKhata },
           { path: 'bhatta/advances', Component: WorkerAdvanceSettlement },
           { path: 'bhatta/expenses', Component: DailyExpensesKhata },
-          { path: 'bhatta/matti-fuel', Component: MattiFuelKhata },
+          { path: 'bhatta/matti', Component: MattiKhata },
+          { path: 'bhatta/fuel', Component: FuelKhata },
+          { path: 'bhatta/matti-fuel', Component: MattiKhata },
           { path: 'bhatta/stock', Component: StockInventory },
           { path: 'bhatta/customers', Component: CustomerLedger },
           { path: 'bhatta/billing', Component: SalesInvoiceBilling },

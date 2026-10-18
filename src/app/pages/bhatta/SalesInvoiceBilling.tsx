@@ -31,6 +31,9 @@ export function SalesInvoiceBilling() {
   const [invoices, setInvoices] = useState<SalesInvoice[]>(bhattaService.getInvoices());
   const [customers, setCustomers] = useState<Customer[]>(bhattaService.getCustomers());
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [selectedInvoiceForModal, setSelectedInvoiceForModal] = useState<SalesInvoice | null>(null);
 
   // Invoice Modal Form (Create / Edit)
@@ -143,11 +146,51 @@ export function SalesInvoiceBilling() {
     }
   };
 
-  const filteredInvoices = invoices.filter(inv =>
-    inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (inv.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.destination_address.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const isWithinDateFilter = (dateStr: string) => {
+    if (dateFilterMode === 'All') return true;
+    if (!dateStr) return false;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (dateFilterMode === 'Today') {
+      return dateStr === todayStr;
+    }
+
+    if (dateFilterMode === 'ThisWeek') {
+      const day = today.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + diffToMonday);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const sundayStr = sunday.toISOString().split('T')[0];
+      return dateStr >= mondayStr && dateStr <= sundayStr;
+    }
+
+    if (dateFilterMode === 'ThisMonth') {
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      return dateStr.startsWith(`${year}-${month}`);
+    }
+
+    if (dateFilterMode === 'Custom') {
+      if (customStartDate && dateStr < customStartDate) return false;
+      if (customEndDate && dateStr > customEndDate) return false;
+      return true;
+    }
+
+    return true;
+  };
+
+  const filteredInvoices = invoices.filter(inv => {
+    const matchesSearch = inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inv.destination_address.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = isWithinDateFilter(inv.invoice_date);
+    return matchesSearch && matchesDate;
+  });
 
   const totalBilledRevenue = filteredInvoices.reduce((sum, inv) => sum + inv.net_total_amount, 0);
   const totalQuantitySold = filteredInvoices.reduce((sum, inv) => sum + inv.quantity, 0);
@@ -288,17 +331,55 @@ export function SalesInvoiceBilling() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm">
-        <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder="Search by invoice number, customer name or site..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8] focus:bg-white transition-all"
-          />
+      {/* Search & Period Filter Bar */}
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="flex flex-wrap items-center gap-3 w-full">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by invoice number, customer name or site..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8] focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-[#64748B]" />
+            <select
+              value={dateFilterMode}
+              onChange={(e) => setDateFilterMode(e.target.value as any)}
+              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+            >
+              <option value="All">All Time (تمام بلز)</option>
+              <option value="Today">Today (آج کی سیلز)</option>
+              <option value="ThisWeek">This Week (اس ہفتے کی سیلز)</option>
+              <option value="ThisMonth">This Month (اس مہینے کی سیلز)</option>
+              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
+            </select>
+          </div>
+
+          {/* Custom Date Range Inputs */}
+          {dateFilterMode === 'Custom' && (
+            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
+              <span className="text-slate-500 text-[11px]">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+              <span className="text-slate-500 text-[11px]">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+            </div>
+          )}
         </div>
       </div>
 

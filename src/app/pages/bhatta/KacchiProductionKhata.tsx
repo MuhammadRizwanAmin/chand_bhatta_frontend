@@ -17,7 +17,8 @@ import {
   X,
   Save,
   Printer,
-  Download
+  Download,
+  Search
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -26,6 +27,7 @@ export function KacchiProductionKhata() {
   const [records, setRecords] = useState<KacchiAentRecord[]>(bhattaService.getKacchiRecords());
   const [employees, setEmployees] = useState<Employee[]>(bhattaService.getEmployees());
   const [selectedWorker, setSelectedWorker] = useState<string>('All');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
@@ -138,21 +140,25 @@ export function KacchiProductionKhata() {
     }
   };
 
+  const getWorkerName = (empId: number) => {
+    const emp = employees.find(e => e.id === empId);
+    return emp ? emp.full_name : `Worker #${empId}`;
+  };
+
   // Filtered records
   const filteredRecords = records.filter(rec => {
+    const workerName = getWorkerName(rec.employee_id).toLowerCase();
+    const matchesSearch = !searchTerm || 
+      workerName.includes(searchTerm.toLowerCase()) || 
+      String(rec.employee_id).includes(searchTerm);
     const matchesWorker = selectedWorker === 'All' || String(rec.employee_id) === selectedWorker;
     const matchesDate = isWithinDateFilter(rec.entry_date);
-    return matchesWorker && matchesDate;
+    return matchesSearch && matchesWorker && matchesDate;
   });
 
   // Aggregated totals
   const totalQuantity = filteredRecords.reduce((sum, r) => sum + r.quantity, 0);
   const totalAmount = filteredRecords.reduce((sum, r) => sum + r.total_amount, 0);
-
-  const getWorkerName = (empId: number) => {
-    const emp = employees.find(e => e.id === empId);
-    return emp ? emp.full_name : `Worker #${empId}`;
-  };
 
   const handleDownloadKacchiPDF = () => {
     try {
@@ -278,6 +284,18 @@ export function KacchiProductionKhata() {
       {/* Filter Bar */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
         <div className="flex flex-wrap items-center gap-3 w-full">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by worker name, ID... (مزدور تلاش کریں)"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+            />
+          </div>
+
           {/* Worker Select */}
           <div className="flex items-center gap-2">
             <Users size={16} className="text-[#64748B]" />

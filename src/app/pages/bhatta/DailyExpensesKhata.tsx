@@ -31,6 +31,7 @@ export function DailyExpensesKhata() {
   const [expenses, setExpenses] = useState<DailyExpense[]>(bhattaService.getExpenses());
   const [categories, setCategories] = useState<ExpenseCategory[]>(bhattaService.getCategories());
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
   const [filterStartDate, setFilterStartDate] = useState<string>('');
   const [filterEndDate, setFilterEndDate] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -115,15 +116,52 @@ export function DailyExpensesKhata() {
     }
   };
 
+  const isWithinDateFilter = (dateStr: string) => {
+    if (dateFilterMode === 'All') return true;
+    if (!dateStr) return false;
+
+    const entry = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const entryDay = new Date(entry);
+    entryDay.setHours(0, 0, 0, 0);
+
+    if (dateFilterMode === 'Today') {
+      return entryDay.getTime() === today.getTime();
+    }
+
+    if (dateFilterMode === 'ThisWeek') {
+      const dayOfWeek = today.getDay();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      return entryDay >= startOfWeek && entryDay <= endOfWeek;
+    }
+
+    if (dateFilterMode === 'ThisMonth') {
+      return entry.getFullYear() === today.getFullYear() && entry.getMonth() === today.getMonth();
+    }
+
+    if (dateFilterMode === 'Custom') {
+      if (filterStartDate && dateStr < filterStartDate) return false;
+      if (filterEndDate && dateStr > filterEndDate) return false;
+      return true;
+    }
+
+    return true;
+  };
+
   // Filter logic
   const filteredExpenses = expenses.filter(exp => {
     const matchesCategory = selectedCategory === 'All' || String(exp.category_id) === selectedCategory;
     const matchesSearch =
       exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exp.paid_by.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate =
-      (!filterStartDate || exp.expense_date >= filterStartDate) &&
-      (!filterEndDate || exp.expense_date <= filterEndDate);
+    const matchesDate = isWithinDateFilter(exp.expense_date);
     return matchesCategory && matchesSearch && matchesDate;
   });
 
@@ -390,23 +428,41 @@ export function DailyExpensesKhata() {
             ))}
           </select>
 
-          {/* Date range */}
-          <div className="flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-1 text-xs">
-            <span className="text-slate-500 text-[10px]">From</span>
-            <input
-              type="date"
-              value={filterStartDate}
-              onChange={(e) => setFilterStartDate(e.target.value)}
-              className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-            />
-            <span className="text-slate-500 text-[10px]">To</span>
-            <input
-              type="date"
-              value={filterEndDate}
-              onChange={(e) => setFilterEndDate(e.target.value)}
-              className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-            />
+          {/* Period Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-[#64748B]" />
+            <select
+              value={dateFilterMode}
+              onChange={(e) => setDateFilterMode(e.target.value as any)}
+              className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-lg px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+            >
+              <option value="All">All Time (تمام اخراجات)</option>
+              <option value="Today">Today (آج کے اخراجات)</option>
+              <option value="ThisWeek">This Week (اس ہفتے کے اخراجات)</option>
+              <option value="ThisMonth">This Month (اس مہینے کے اخراجات)</option>
+              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
+            </select>
           </div>
+
+          {/* Custom Date range */}
+          {dateFilterMode === 'Custom' && (
+            <div className="flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-1 text-xs">
+              <span className="text-slate-500 text-[10px]">From</span>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+              <span className="text-slate-500 text-[10px]">To</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+            </div>
+          )}
 
           <button
             onClick={handleDownloadFilteredExpensesPDF}

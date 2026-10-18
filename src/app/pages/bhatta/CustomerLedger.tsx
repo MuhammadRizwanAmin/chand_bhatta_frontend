@@ -33,6 +33,9 @@ export function CustomerLedger() {
   const statementPrintRef = useRef<HTMLDivElement>(null);
   const [customers, setCustomers] = useState<Customer[]>(bhattaService.getCustomers());
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   // Customer Add/Edit Modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -306,11 +309,54 @@ export function CustomerLedger() {
     }
   };
 
-  const filteredCustomers = customers.filter(c =>
-    c.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone.includes(searchTerm) ||
-    c.address.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const isWithinDateFilter = (dateStr: string) => {
+    if (dateFilterMode === 'All') return true;
+    if (!dateStr) return false;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (dateFilterMode === 'Today') {
+      return dateStr === todayStr;
+    }
+
+    if (dateFilterMode === 'ThisWeek') {
+      const day = today.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + diffToMonday);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const sundayStr = sunday.toISOString().split('T')[0];
+      return dateStr >= mondayStr && dateStr <= sundayStr;
+    }
+
+    if (dateFilterMode === 'ThisMonth') {
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      return dateStr.startsWith(`${year}-${month}`);
+    }
+
+    if (dateFilterMode === 'Custom') {
+      if (customStartDate && dateStr < customStartDate) return false;
+      if (customEndDate && dateStr > customEndDate) return false;
+      return true;
+    }
+
+    return true;
+  };
+
+  const filteredCustomers = customers.filter(c => {
+    const matchesSearch =
+      c.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.phone.includes(searchTerm) ||
+      c.address.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (dateFilterMode === 'All') return true;
+    const stmt = bhattaService.getCustomerStatement(c.id);
+    return stmt.ledger.some((row: any) => isWithinDateFilter(row.date));
+  });
 
   const totalMarketUdhar = customers.reduce((sum, c) => {
     const stmt = bhattaService.getCustomerStatement(c.id);
@@ -396,39 +442,55 @@ export function CustomerLedger() {
         </div>
       </div>
 
-      {/* Filter / Search Bar */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-sm">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder="Search by customer name, phone number or address..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8] focus:bg-white transition-all"
-          />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-xs text-[#64748B]">
-            Total: <strong className="text-[#0F172A] font-mono">{filteredCustomers.length}</strong>
+      {/* Filter / Search Bar with Period Filter Dropdown */}
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 w-full">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by customer name, phone number or address..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8] focus:bg-white transition-all"
+            />
           </div>
-          <button
-            onClick={handleDownloadCustomersListPDF}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            title="Download PDF"
-          >
-            <Download size={14} />
-            PDF
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            title="Print"
-          >
-            <Printer size={14} />
-            Print
-          </button>
+
+          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-[#64748B]" />
+            <select
+              value={dateFilterMode}
+              onChange={(e) => setDateFilterMode(e.target.value as any)}
+              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+            >
+              <option value="All">All Time (تمام کھاتے)</option>
+              <option value="Today">Today (آج کا کھاتہ)</option>
+              <option value="ThisWeek">This Week (اس ہفتے کا کھاتہ)</option>
+              <option value="ThisMonth">This Month (اس مہینے کا کھاتہ)</option>
+              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
+            </select>
+          </div>
+
+          {/* Custom Date Range Inputs */}
+          {dateFilterMode === 'Custom' && (
+            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
+              <span className="text-slate-500 text-[11px]">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+              <span className="text-slate-500 text-[11px]">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+            </div>
+          )}
         </div>
       </div>
 

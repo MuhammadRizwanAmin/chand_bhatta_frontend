@@ -99,11 +99,18 @@ export const getAllMenuItems = (isUrdu?: boolean): MenuItem[] => [
     path: '/bhatta/expenses',
   },
   {
-    name: isUrdu ? 'مٹی و ایندھن کھاتہ' : 'Matti & Fuel Khata',
-    nameUr: 'مٹی و ایندھن کھاتہ',
-    nameEn: 'Matti & Fuel Khata',
+    name: isUrdu ? 'مٹی ٹرالی کھاتہ' : 'Matti Trolley Khata',
+    nameUr: 'مٹی ٹرالی کھاتہ',
+    nameEn: 'Matti Trolley Khata',
     icon: <Truck size={20} />,
-    path: '/bhatta/matti-fuel',
+    path: '/bhatta/matti',
+  },
+  {
+    name: isUrdu ? 'فیول و کوئلہ کھاتہ' : 'Fuel & Coal Khata',
+    nameUr: 'فیول و کوئلہ کھاتہ',
+    nameEn: 'Fuel & Coal Khata',
+    icon: <Flame size={20} />,
+    path: '/bhatta/fuel',
   },
   {
     name: isUrdu ? 'سیٹنگز و پروفائل' : 'Settings & Profile',
