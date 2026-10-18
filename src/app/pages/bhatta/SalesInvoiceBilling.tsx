@@ -20,7 +20,8 @@ import {
   Eye,
   Save,
   Layers,
-  Download
+  Download,
+  Edit2
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -32,8 +33,9 @@ export function SalesInvoiceBilling() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoiceForModal, setSelectedInvoiceForModal] = useState<SalesInvoice | null>(null);
 
-  // New Invoice Modal Form
+  // Invoice Modal Form (Create / Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     customer_id: customers[0]?.id || 1,
     invoice_date: new Date().toISOString().split('T')[0],
@@ -68,22 +70,70 @@ export function SalesInvoiceBilling() {
     }));
   };
 
-  const handleCreateInvoice = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newInv = bhattaService.createSalesInvoice({
-      customer_id: Number(formData.customer_id),
-      invoice_date: formData.invoice_date,
-      item_type: formData.item_type,
-      quantity: Number(formData.quantity),
-      rate_per_thousand: Number(formData.rate_per_thousand),
-      kiraya_freight: Number(formData.kiraya_freight),
-      destination_address: formData.destination_address,
-      driver_name: formData.driver_name,
+  const handleOpenCreate = () => {
+    setEditingInvoiceId(null);
+    setFormData({
+      customer_id: customers[0]?.id || 1,
+      invoice_date: new Date().toISOString().split('T')[0],
+      item_type: 'Aent_Aval',
+      quantity: 10000,
+      rate_per_thousand: 14000,
+      kiraya_freight: 5000,
+      destination_address: customers[0]?.address || 'Burewala Construction Site',
+      driver_name: 'Iqbal Hussain (Trolley # 4821)',
     });
-    setIsModalOpen(false);
-    refreshData();
-    // Open the branded PDF / print invoice modal right away!
-    setSelectedInvoiceForModal(newInv);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (inv: SalesInvoice) => {
+    setEditingInvoiceId(inv.id);
+    setFormData({
+      customer_id: inv.customer_id,
+      invoice_date: inv.invoice_date,
+      item_type: inv.item_type,
+      quantity: inv.quantity,
+      rate_per_thousand: inv.rate_per_thousand,
+      kiraya_freight: inv.kiraya_freight,
+      destination_address: inv.destination_address,
+      driver_name: inv.driver_name || '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitInvoice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingInvoiceId) {
+      const updatedInv = bhattaService.updateInvoice(editingInvoiceId, {
+        customer_id: Number(formData.customer_id),
+        invoice_date: formData.invoice_date,
+        item_type: formData.item_type,
+        quantity: Number(formData.quantity),
+        rate_per_thousand: Number(formData.rate_per_thousand),
+        kiraya_freight: Number(formData.kiraya_freight),
+        destination_address: formData.destination_address,
+        driver_name: formData.driver_name,
+      });
+      setIsModalOpen(false);
+      setEditingInvoiceId(null);
+      refreshData();
+      if (updatedInv) {
+        setSelectedInvoiceForModal(updatedInv);
+      }
+    } else {
+      const newInv = bhattaService.createSalesInvoice({
+        customer_id: Number(formData.customer_id),
+        invoice_date: formData.invoice_date,
+        item_type: formData.item_type,
+        quantity: Number(formData.quantity),
+        rate_per_thousand: Number(formData.rate_per_thousand),
+        kiraya_freight: Number(formData.kiraya_freight),
+        destination_address: formData.destination_address,
+        driver_name: formData.driver_name,
+      });
+      setIsModalOpen(false);
+      refreshData();
+      setSelectedInvoiceForModal(newInv);
+    }
   };
 
   const handleDeleteInvoice = (id: number) => {
@@ -188,7 +238,7 @@ export function SalesInvoiceBilling() {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreate}
           className="flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
         >
           <PlusCircle size={17} />
@@ -239,8 +289,8 @@ export function SalesInvoiceBilling() {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-sm">
-        <div className="relative w-full sm:w-96">
+      <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-sm">
+        <div className="relative w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
@@ -249,25 +299,6 @@ export function SalesInvoiceBilling() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8] focus:bg-white transition-all"
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownloadSalesInvoicesPDF}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            title="Download PDF"
-          >
-            <Download size={14} />
-            PDF
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            title="Print"
-          >
-            <Printer size={14} />
-            Print
-          </button>
         </div>
       </div>
 
@@ -336,6 +367,14 @@ export function SalesInvoiceBilling() {
                           Bill
                         </button>
                         <button
+                          onClick={() => handleOpenEdit(inv)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold text-[11px] transition-colors cursor-pointer border border-amber-200/60"
+                          title="Edit Invoice (بل میں ترمیم کریں)"
+                        >
+                          <Edit2 size={13} />
+                          Edit
+                        </button>
+                        <button
                           onClick={() => handleDeleteInvoice(inv.id)}
                           className="p-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                           title="Delete Invoice"
@@ -352,7 +391,7 @@ export function SalesInvoiceBilling() {
         </div>
       </div>
 
-      {/* CREATE NEW SALES INVOICE MODAL */}
+      {/* CREATE / EDIT SALES INVOICE MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl">
@@ -362,7 +401,7 @@ export function SalesInvoiceBilling() {
                   AMD
                 </div>
                 <h3 className="text-base font-bold text-white">
-                  Create Sales Invoice (چاند برکس نیا بل)
+                  {editingInvoiceId ? 'Edit Sales Invoice (بل میں ترمیم کریں)' : 'Create Sales Invoice (چاند برکس نیا بل)'}
                 </h3>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
@@ -370,7 +409,7 @@ export function SalesInvoiceBilling() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateInvoice} className="p-6 space-y-4 text-[#0F172A]">
+            <form onSubmit={handleSubmitInvoice} className="p-6 space-y-4 text-[#0F172A]">
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -504,7 +543,7 @@ export function SalesInvoiceBilling() {
                   className="flex items-center gap-1.5 px-5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer"
                 >
                   <Save size={15} />
-                  Generate Invoice & View Bill
+                  {editingInvoiceId ? 'Update Invoice & View Bill (انوائس اپڈیٹ کریں)' : 'Generate Invoice & View Bill'}
                 </button>
               </div>
 

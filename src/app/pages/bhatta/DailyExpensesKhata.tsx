@@ -214,6 +214,103 @@ export function DailyExpensesKhata() {
     }
   };
 
+  const handlePrintExpenses = () => {
+    const printWindow = window.open('', '', 'width=950,height=750');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const rowsHtml = filteredExpenses.map(exp => `
+      <tr>
+        <td style="font-family: monospace;">${exp.expense_date}</td>
+        <td><strong>${exp.category_name || 'General'}</strong></td>
+        <td>${exp.description}</td>
+        <td>${exp.paid_by}</td>
+        <td>${exp.payment_mode}</td>
+        <td style="text-align: right; font-family: monospace; font-weight: bold;">Rs. ${exp.amount.toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ur">
+      <head>
+        <title>Daily Expenses Report - Chand Bricks</title>
+        <meta charset="utf-8">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+          * { box-sizing: border-box; font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaliq', 'Segoe UI', Tahoma, sans-serif; }
+          body { margin: 20px; color: #0f172a; background: #fff; }
+          .header-box { text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 15px; }
+          .title { font-size: 24px; font-weight: bold; color: #1d4ed8; margin: 0; }
+          .sub { font-size: 13px; color: #475569; margin: 4px 0; }
+          .contact { font-size: 12px; color: #b45309; font-weight: bold; }
+          .report-tag { background: #f1f5f9; padding: 6px 12px; border-radius: 6px; display: inline-block; font-weight: bold; margin-top: 8px; color: #1e3a8a; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+          th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: right; }
+          th { background: #1d4ed8; color: #ffffff; font-weight: bold; }
+          .total-box { margin-top: 15px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-align: left; font-size: 14px; font-weight: bold; color: #e11d48; }
+          .signs { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; border-top: 1px dashed #cbd5e1; font-size: 12px; }
+          @media print {
+            body { margin: 5mm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-box">
+          <h1 class="title">چاند برکس سپلائرز (اے ایم ڈی)</h1>
+          <p class="sub">چک نمبر 431/ای بی، چیچہ وطنی روڈ، نزد گو پٹرول پمپ، بوریوالا</p>
+          <p class="contact">سیٹھ حاجی ناصر: 0302-6780883 | منشی سرور: 0304-6557345</p>
+          <div class="report-tag">روزانہ کے بھٹہ اخراجات کی تفصیلی رپورٹ (Daily Expenses Khata)</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; color: #334155;">
+          <span>تاریخ رپورٹ: ${new Date().toLocaleDateString('en-CA')}</span>
+          <span>کل انٹریز: ${filteredExpenses.length}</span>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>تاریخ (Date)</th>
+              <th>کیٹیگری (Category)</th>
+              <th>تفصیل (Description)</th>
+              <th>ادا کنندہ (Paid By)</th>
+              <th>طریقہ (Payment Mode)</th>
+              <th style="text-align: right;">رقم (Amount)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || '<tr><td colspan="6" style="text-align: center; color: #94a3b8;">کوئی اخراجات نہیں ملے</td></tr>'}
+          </tbody>
+        </table>
+
+        <div class="total-box">
+          مجموعی کل بھٹہ اخراجات: Rs. ${totalExpenseAmount.toLocaleString()}
+        </div>
+
+        <div class="signs">
+          <div>
+            <div style="border-bottom: 1px solid #94a3b8; width: 180px; height: 30px;"></div>
+            <p style="margin-top: 5px; font-weight: bold;">دستخط منشی / مینیجر</p>
+          </div>
+          <div>
+            <div style="border-bottom: 1px solid #94a3b8; width: 180px; height: 30px;"></div>
+            <p style="margin-top: 5px; font-weight: bold;">دستخط مالک بھٹہ</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 450);
+  };
+
   return (
     <div className="space-y-6">
       
@@ -321,7 +418,7 @@ export function DailyExpensesKhata() {
           </button>
 
           <button
-            onClick={() => window.print()}
+            onClick={handlePrintExpenses}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
             title="Print"
           >

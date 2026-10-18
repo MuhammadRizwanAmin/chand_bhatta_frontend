@@ -326,24 +326,6 @@ export function WorkerAdvanceSettlement() {
               <Scale size={18} className="text-[#1D4ED8]" />
               <h3 className="text-sm font-bold text-[#0F172A]">Labor Gang Net Balance Settlement Ledger (خالص حساب)</h3>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDownloadSettlementPDF}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                title="Download PDF"
-              >
-                <Download size={14} />
-                PDF
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                title="Print"
-              >
-                <Printer size={14} />
-                Print
-              </button>
-            </div>
           </div>
 
           <div className="overflow-x-auto">

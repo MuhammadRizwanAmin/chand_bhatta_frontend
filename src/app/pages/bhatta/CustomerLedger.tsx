@@ -187,11 +187,60 @@ export function CustomerLedger() {
       doc.setTextColor(225, 29, 72);
       doc.text(`Net Outstanding Balance: Rs. ${statement.currentBalance.toLocaleString()}`, 195, finalY + 11, { align: 'right' });
 
-      doc.save(`Statement_${(statement.customer?.customer_name || 'Customer').replace(/\\s+/g, '_')}.pdf`);
+      doc.save(`Statement_${(statement.customer?.customer_name || 'Customer').replace(/\s+/g, '_')}.pdf`);
     } catch (e) {
       console.error('PDF error', e);
       window.print();
     }
+  };
+
+  const handlePrintStatement = () => {
+    if (!statementPrintRef.current) return;
+    const printContent = statementPrintRef.current.innerHTML;
+    const printWindow = window.open('', '', 'width=950,height=750');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ur">
+      <head>
+        <title>Customer Statement - ${statementData?.customer?.customer_name || 'Customer'}</title>
+        <meta charset="utf-8">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+          * { box-sizing: border-box; font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaliq', 'Segoe UI', Tahoma, sans-serif; }
+          body { margin: 15px; color: #0f172a; background: #fff; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; font-size: 11px; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px 8px; }
+          th { background: #f1f5f9; font-weight: bold; }
+          .text-right { text-align: right; }
+          .text-left { text-align: left; }
+          .text-center { text-align: center; }
+          .font-mono { font-family: monospace; }
+          .font-bold { font-weight: bold; }
+          .text-blue-900 { color: #1e3a8a; }
+          .text-emerald-700 { color: #047857; }
+          .text-rose-600 { color: #e11d48; }
+          @media print {
+            button { display: none !important; }
+            body { margin: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        ${printContent}
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 450);
   };
 
   const handleDownloadCustomersListPDF = () => {
@@ -673,9 +722,7 @@ export function CustomerLedger() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    handlePrintStatement();
-                  }}
+                  onClick={() => handleDownloadStatementPDF(statementData)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
                   title="Save as PDF (پی ڈی ایف محفوظ کریں)"
                 >
@@ -684,9 +731,7 @@ export function CustomerLedger() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    handlePrintStatement();
-                  }}
+                  onClick={handlePrintStatement}
                   className="flex items-center gap-1.5 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
                   title="Print Statement (پرنٹ کھاتہ)"
                 >

@@ -85,9 +85,11 @@ h1, h2, h3, h4, h5, h6, .font-urdu, [lang="ur"] {
     print-color-adjust: exact !important;
   }
 
-  /* Hide background app, screen buttons and control bars */
-  #root,
-  .print\\:hidden,
+  /* Hide navigation, screen buttons and control bars on print */
+  nav,
+  aside,
+  .print\:hidden,
+  .no-print,
   .invoice-modal-controls,
   button {
     display: none !important;

@@ -14,6 +14,7 @@ import {
   Edit2,
   Coins,
   AlertCircle,
+  CheckCircle2,
   X,
   Save,
   Printer,
@@ -47,6 +48,7 @@ export function MattiFuelKhata() {
     item_type: 'Kuila' as 'Lakri' | 'Kuila' | 'Masala_Bhura',
     quantity: 100,
     unit_rate: 650,
+    paid_amount: 65000,
     supplier_name: 'Balochistan Coal Traders',
     remarks: 'Burning coal bags / mounds',
   });
@@ -118,6 +120,7 @@ export function MattiFuelKhata() {
       item_type: 'Kuila',
       quantity: 100,
       unit_rate: 650,
+      paid_amount: 65000,
       supplier_name: 'Balochistan Coal Traders',
       remarks: 'Burning coal bags / mounds',
     });
@@ -131,6 +134,7 @@ export function MattiFuelKhata() {
       item_type: rec.item_type,
       quantity: rec.quantity,
       unit_rate: rec.unit_rate,
+      paid_amount: rec.paid_amount ?? rec.total_amount,
       supplier_name: rec.supplier_name,
       remarks: rec.remarks || '',
     });
@@ -145,6 +149,7 @@ export function MattiFuelKhata() {
         item_type: fuelForm.item_type,
         quantity: Number(fuelForm.quantity),
         unit_rate: Number(fuelForm.unit_rate),
+        paid_amount: Number(fuelForm.paid_amount),
         supplier_name: fuelForm.supplier_name,
         remarks: fuelForm.remarks,
       });
@@ -154,6 +159,7 @@ export function MattiFuelKhata() {
         item_type: fuelForm.item_type,
         quantity: Number(fuelForm.quantity),
         unit_rate: Number(fuelForm.unit_rate),
+        paid_amount: Number(fuelForm.paid_amount),
         supplier_name: fuelForm.supplier_name,
         remarks: fuelForm.remarks,
       });
@@ -176,11 +182,17 @@ export function MattiFuelKhata() {
     }
   };
 
-  // Totals
+  // Matti Totals
   const totalTrolleys = mattiRecords.reduce((sum, m) => sum + m.trolley_count, 0);
   const totalMattiAmount = mattiRecords.reduce((sum, m) => sum + m.total_amount, 0);
   const totalMattiPaid = mattiRecords.reduce((sum, m) => sum + m.paid_amount, 0);
-  const totalFuelCost = fuelRecords.reduce((sum, f) => sum + f.total_amount, 0);
+  const totalMattiBalance = Math.max(0, totalMattiAmount - totalMattiPaid);
+
+  // Fuel Totals
+  const totalFuelQty = fuelRecords.reduce((sum, f) => sum + f.quantity, 0);
+  const totalFuelAmount = fuelRecords.reduce((sum, f) => sum + f.total_amount, 0);
+  const totalFuelPaid = fuelRecords.reduce((sum, f) => sum + (f.paid_amount ?? f.total_amount), 0);
+  const totalFuelBalance = Math.max(0, totalFuelAmount - totalFuelPaid);
 
   // Download Matti PDF
   const handleDownloadMattiPDF = () => {
@@ -307,8 +319,17 @@ export function MattiFuelKhata() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] flex items-center gap-2">
-            <Truck className="text-[#1D4ED8]" />
-            Matti Trolley & Fuel Khata (مٹی ٹرالی و ایندھن کھاتہ)
+            {activeTab === 'matti' ? (
+              <>
+                <Truck className="text-[#1D4ED8]" />
+                Matti Trolley Khata (مٹی ٹرالی کھاتہ)
+              </>
+            ) : (
+              <>
+                <Flame className="text-[#D4A017]" />
+                Fuel & Masala Khata (ایندھن و مصالحہ کھاتہ)
+              </>
+            )}
           </h2>
         </div>
 
@@ -354,50 +375,124 @@ export function MattiFuelKhata() {
         </div>
       </div>
 
-      {/* 3 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Card 1: Clay Trolleys */}
-        <div className="bg-gradient-to-br from-amber-50 via-orange-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-amber-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Clay Trolleys (مٹی ٹرالی تعداد)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs">
-              <Truck size={16} />
+      {/* METRIC CARDS (SEPARATE FOR EACH TAB) */}
+      {activeTab === 'matti' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Clay Trolleys */}
+          <div className="bg-gradient-to-br from-amber-50 via-orange-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-amber-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Total Clay Trolleys (تعداد)</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                <Truck size={16} />
+              </div>
             </div>
+            <div className="text-2xl font-black text-amber-950 font-mono">
+              {totalTrolleys.toLocaleString()} <span className="text-xs font-semibold text-amber-700">trolleys</span>
+            </div>
+            <p className="text-[11px] text-amber-900 font-medium mt-1">Total Deliveries Recorded</p>
           </div>
-          <div className="text-2xl font-black text-amber-950 font-mono">
-            {totalTrolleys.toLocaleString()} <span className="text-xs font-semibold text-amber-700">trolleys</span>
-          </div>
-          <p className="text-[11px] text-amber-900 font-medium mt-1">Total Matti Bill: Rs. {totalMattiAmount.toLocaleString()}</p>
-        </div>
 
-        {/* Card 2: Matti Supplier Payable (Outflow / Debt) */}
-        <div className="bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-rose-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Matti Supplier Payable (مٹی سپلائر ادھار)</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-xs">
-              <AlertCircle size={16} />
+          {/* Card 2: Total Amount */}
+          <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-blue-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Total Bill Amount (کل رقم)</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                <Coins size={16} />
+              </div>
             </div>
+            <div className="text-2xl font-black text-blue-950 font-mono">
+              Rs. {totalMattiAmount.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-blue-900 font-medium mt-1">Total Matti Bill</p>
           </div>
-          <div className="text-2xl font-black text-rose-600 font-mono">
-            Rs. {Math.max(0, totalMattiAmount - totalMattiPaid).toLocaleString()}
-          </div>
-          <p className="text-[11px] text-rose-800 font-bold mt-1">Paid: Rs. {totalMattiPaid.toLocaleString()}</p>
-        </div>
 
-        {/* Card 3: Fuel & Burning Cost */}
-        <div className="bg-gradient-to-br from-orange-50 via-amber-50/50 to-red-100/40 border border-orange-300/80 border-t-4 border-t-orange-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-orange-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Fuel & Burning Cost (ایندھن لاگت)</span>
-            <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center shadow-xs">
-              <Flame size={16} />
+          {/* Card 3: Paid Amount */}
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50/40 to-emerald-100/40 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-emerald-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Paid Amount (ادا شدہ رقم)</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <CheckCircle2 size={16} />
+              </div>
             </div>
+            <div className="text-2xl font-black text-emerald-950 font-mono">
+              Rs. {totalMattiPaid.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-emerald-900 font-medium mt-1">Paid to Suppliers</p>
           </div>
-          <div className="text-2xl font-black text-orange-950 font-mono">
-            Rs. {totalFuelCost.toLocaleString()}
+
+          {/* Card 4: Remaining Balance */}
+          <div className="bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-rose-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Remaining Balance (باقی رقم / ادھار)</span>
+              <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                <AlertCircle size={16} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-rose-600 font-mono">
+              Rs. {totalMattiBalance.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-rose-800 font-bold mt-1">Payable Balance</p>
           </div>
-          <p className="text-[11px] text-orange-900 font-medium mt-1">Coal, Firewood & Rice Husk consumed</p>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Fuel Card 1: Total Quantity */}
+          <div className="bg-gradient-to-br from-orange-50 via-amber-50/40 to-orange-100/40 border border-orange-300/80 border-t-4 border-t-orange-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-orange-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Total Fuel Quantity (مقدار / بیگز)</span>
+              <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center shadow-xs">
+                <Flame size={16} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-orange-950 font-mono">
+              {totalFuelQty.toLocaleString()} <span className="text-xs font-semibold text-orange-700">units/bags</span>
+            </div>
+            <p className="text-[11px] text-orange-900 font-medium mt-1">Coal, Firewood & Husk</p>
+          </div>
+
+          {/* Fuel Card 2: Total Amount */}
+          <div className="bg-gradient-to-br from-amber-50 via-yellow-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-amber-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Total Fuel Cost (کل رقم)</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                <Coins size={16} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-amber-950 font-mono">
+              Rs. {totalFuelAmount.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-amber-900 font-medium mt-1">Total Burning Expense</p>
+          </div>
+
+          {/* Fuel Card 3: Paid Amount */}
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50/40 to-emerald-100/40 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-emerald-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Paid Amount (ادا شدہ رقم)</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <CheckCircle2 size={16} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-emerald-950 font-mono">
+              Rs. {totalFuelPaid.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-emerald-900 font-medium mt-1">Paid to Fuel Vendors</p>
+          </div>
+
+          {/* Fuel Card 4: Remaining Balance */}
+          <div className="bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+            <div className="flex items-center justify-between text-rose-900 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Remaining Balance (باقی رقم / ادھار)</span>
+              <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                <AlertCircle size={16} />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-rose-600 font-mono">
+              Rs. {totalFuelBalance.toLocaleString()}
+            </div>
+            <p className="text-[11px] text-rose-800 font-bold mt-1">Payable to Fuel Vendors</p>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: MATTI TROLLEY TABLE */}
       {activeTab === 'matti' && (
@@ -407,24 +502,6 @@ export function MattiFuelKhata() {
               <Truck size={16} className="text-[#1D4ED8]" />
               Matti Trolley Deliveries (مٹی ٹرالی کھاتہ اندراج)
             </h3>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDownloadMattiPDF}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                title="Download PDF"
-              >
-                <Download size={14} />
-                PDF
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                title="Print"
-              >
-                <Printer size={14} />
-                Print
-              </button>
-            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -489,24 +566,6 @@ export function MattiFuelKhata() {
               <Flame size={16} className="text-[#D4A017]" />
               Fuel & Masala Expenses (کوئلہ، لکڑی، مصالحہ خریداری)
             </h3>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDownloadFuelPDF}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                title="Download PDF"
-              >
-                <Download size={14} />
-                PDF
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                title="Print"
-              >
-                <Printer size={14} />
-                Print
-              </button>
-            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -518,53 +577,65 @@ export function MattiFuelKhata() {
                   <th className="py-3 px-4">Supplier Name</th>
                   <th className="py-3 px-4 text-right">Quantity (وزن / تعداد)</th>
                   <th className="py-3 px-4 text-right">Unit Rate (ریٹ)</th>
-                  <th className="py-3 px-4 text-right text-[#D4A017] font-bold">Total Cost (کل لاگت)</th>
+                  <th className="py-3 px-4 text-right text-[#D4A017] font-bold">Total Cost (کل رقم)</th>
+                  <th className="py-3 px-4 text-right text-emerald-600 font-bold">Paid Amount (ادا شدہ)</th>
+                  <th className="py-3 px-4 text-right text-rose-600 font-bold">Balance (بقایا)</th>
                   <th className="py-3 px-4">Remarks</th>
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0] text-[#0F172A]">
-                {fuelRecords.map((f) => (
-                  <tr key={f.id} className="hover:bg-[#F8FAFC] transition-colors">
-                    <td className="py-3 px-4 font-mono text-[#64748B]">{f.entry_date}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                        f.item_type === 'Kuila'
-                          ? 'bg-slate-100 text-[#0F172A] border-slate-300'
-                          : f.item_type === 'Lakri'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {f.item_type === 'Kuila' ? 'Kuila (کوئلہ)' : f.item_type === 'Lakri' ? 'Lakri (لکڑی)' : 'Masala/Bhura (مصالحہ/بھورہ)'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-[#0F172A]">{f.supplier_name || 'Burewala Trader'}</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#0F172A]">{f.quantity.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right font-mono text-[#64748B]">Rs. {f.unit_rate.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#D4A017] text-sm">
-                      Rs. {f.total_amount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-[#64748B]">{f.remarks || '-'}</td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleOpenEditFuel(f)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-[#D4A017] transition-colors cursor-pointer"
-                          title="Edit"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFuel(f.id)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {fuelRecords.map((f) => {
+                  const paid = f.paid_amount ?? f.total_amount;
+                  const balance = Math.max(0, f.total_amount - paid);
+                  return (
+                    <tr key={f.id} className="hover:bg-[#F8FAFC] transition-colors">
+                      <td className="py-3 px-4 font-mono text-[#64748B]">{f.entry_date}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                          f.item_type === 'Kuila'
+                            ? 'bg-slate-100 text-[#0F172A] border-slate-300'
+                            : f.item_type === 'Lakri'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {f.item_type === 'Kuila' ? 'Kuila (کوئلہ)' : f.item_type === 'Lakri' ? 'Lakri (لکڑی)' : 'Masala/Bhura (مصالحہ/بھورہ)'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-[#0F172A]">{f.supplier_name || 'Burewala Trader'}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#0F172A]">{f.quantity.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-mono text-[#64748B]">Rs. {f.unit_rate.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#0F172A]">
+                        Rs. {f.total_amount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-[#10B981] font-semibold">
+                        Rs. {paid.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-rose-600">
+                        Rs. {balance.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-[#64748B]">{f.remarks || '-'}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditFuel(f)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-[#D4A017] transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteFuel(f.id)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -749,21 +820,37 @@ export function MattiFuelKhata() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-[#334155] block mb-1">Unit Rate (ریٹ فی من / بیگ - Rs.) *</label>
-                <input
-                  type="number"
-                  required
-                  value={fuelForm.unit_rate}
-                  onChange={(e) => setFuelForm({ ...fuelForm, unit_rate: Number(e.target.value) })}
-                  className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-[#334155] block mb-1">Unit Rate (ریٹ فی من / بیگ - Rs.) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={fuelForm.unit_rate}
+                    onChange={(e) => setFuelForm({ ...fuelForm, unit_rate: Number(e.target.value) })}
+                    className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-[#334155] block mb-1">Paid Amount (ادا شدہ رقم) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={fuelForm.paid_amount}
+                    onChange={(e) => setFuelForm({ ...fuelForm, paid_amount: Number(e.target.value) })}
+                    className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
+                  />
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-1.5">
                 <div className="flex justify-between items-center text-[#0F172A] font-bold">
-                  <span>Total Purchase Cost:</span>
+                  <span>Total Purchase Cost ({fuelForm.quantity} &times; Rs.{fuelForm.unit_rate}):</span>
                   <span className="font-mono text-base text-[#D4A017]">Rs. {(fuelForm.quantity * fuelForm.unit_rate).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-rose-600 font-bold text-[11px] pt-1.5 border-t border-amber-200">
+                  <span>Remaining Vendor Balance (بقایا ادھار):</span>
+                  <span className="font-mono">Rs. {Math.max(0, (fuelForm.quantity * fuelForm.unit_rate) - fuelForm.paid_amount).toLocaleString()}</span>
                 </div>
               </div>
 

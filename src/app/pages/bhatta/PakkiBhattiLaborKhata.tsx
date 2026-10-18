@@ -33,7 +33,9 @@ export function PakkiBhattiLaborKhata() {
   const [records, setRecords] = useState<BhattiLaborRecord[]>(bhattaService.getBhattiRecords());
   const [employees, setEmployees] = useState<Employee[]>(bhattaService.getEmployees());
   const [selectedWorker, setSelectedWorker] = useState<string>('All');
-  const [filterDate, setFilterDate] = useState<string>('');
+  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Add / Edit Record Modal
@@ -52,6 +54,45 @@ export function PakkiBhattiLaborKhata() {
     soyem_qty: 500,
     khangar_qty: 0,
   });
+
+  const isWithinDateFilter = (dateStr: string) => {
+    if (dateFilterMode === 'All') return true;
+    if (!dateStr) return false;
+
+    const entry = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const entryDay = new Date(entry);
+    entryDay.setHours(0, 0, 0, 0);
+
+    if (dateFilterMode === 'Today') {
+      return entryDay.getTime() === today.getTime();
+    }
+
+    if (dateFilterMode === 'ThisWeek') {
+      const dayOfWeek = today.getDay();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      return entryDay >= startOfWeek && entryDay <= endOfWeek;
+    }
+
+    if (dateFilterMode === 'ThisMonth') {
+      return entry.getFullYear() === today.getFullYear() && entry.getMonth() === today.getMonth();
+    }
+
+    if (dateFilterMode === 'Custom') {
+      if (customStartDate && dateStr < customStartDate) return false;
+      if (customEndDate && dateStr > customEndDate) return false;
+      return true;
+    }
+
+    return true;
+  };
 
   useEffect(() => {
     refreshData();
@@ -158,7 +199,7 @@ export function PakkiBhattiLaborKhata() {
 
   const filteredRecords = currentTabRecords.filter(rec => {
     const matchesWorker = selectedWorker === 'All' || String(rec.employee_id) === selectedWorker;
-    const matchesDate = !filterDate || rec.entry_date === filterDate;
+    const matchesDate = isWithinDateFilter(rec.entry_date);
     const workerName = getWorkerName(rec.employee_id).toLowerCase();
     const matchesSearch = !searchTerm || 
       workerName.includes(searchTerm.toLowerCase()) || 
@@ -403,9 +444,9 @@ export function PakkiBhattiLaborKhata() {
         </div>
       </div>
 
-      {/* Filter Bar with Search, Date, and Colored PDF & Print Buttons */}
+      {/* Filter Bar with Search, Period Filter Dropdown and Custom Dates */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full">
           {/* Search box */}
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
@@ -433,44 +474,41 @@ export function PakkiBhattiLaborKhata() {
             </select>
           </div>
 
-          {/* Date Filter */}
+          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
           <div className="flex items-center gap-2">
             <Calendar size={16} className="text-[#64748B]" />
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
-            />
-            {filterDate && (
-              <button
-                onClick={() => setFilterDate('')}
-                className="text-xs text-[#64748B] hover:text-[#0F172A] underline cursor-pointer"
-              >
-                Clear
-              </button>
-            )}
+            <select
+              value={dateFilterMode}
+              onChange={(e) => setDateFilterMode(e.target.value as any)}
+              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+            >
+              <option value="All">All Time (تمام ریکارڈز)</option>
+              <option value="Today">Today (آج کا کام)</option>
+              <option value="ThisWeek">This Week (اس ہفتے کا کام)</option>
+              <option value="ThisMonth">This Month (اس مہینے کا کام)</option>
+              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
+            </select>
           </div>
-        </div>
 
-        {/* Report Action Buttons: PDF in Red, Print in Blue */}
-        <div className="flex items-center gap-2 self-end md:self-auto">
-          <button
-            onClick={handleDownloadPakkiPDF}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            title="Download PDF"
-          >
-            <Download size={14} />
-            PDF
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-            title="Print"
-          >
-            <Printer size={14} />
-            Print
-          </button>
+          {/* Custom Date Range Inputs */}
+          {dateFilterMode === 'Custom' && (
+            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
+              <span className="text-slate-500 text-[11px]">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+              <span className="text-slate-500 text-[11px]">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
+              />
+            </div>
+          )}
         </div>
       </div>
 

@@ -98,6 +98,7 @@ export interface FuelMasalaExpense {
   quantity: number;
   unit_rate: number;
   total_amount: number;
+  paid_amount: number;
   supplier_name: string;
   remarks: string;
 }
@@ -218,9 +219,9 @@ const SEED_MATTI: MattiTrolleyRecord[] = [
 ];
 
 const SEED_FUEL: FuelMasalaExpense[] = [
-  { id: 1, entry_date: todayStr, item_type: 'Kuila', quantity: 30, unit_rate: 800, total_amount: 24000, supplier_name: 'Balochistan Coal Traders', remarks: 'High grade burning coal (Mounds)' },
-  { id: 2, entry_date: yesterdayStr, item_type: 'Lakri', quantity: 35, unit_rate: 400, total_amount: 14000, supplier_name: 'Burewala Timber Mart', remarks: 'Acacia (Kikar) dry firewood' },
-  { id: 3, entry_date: twoDaysAgoStr, item_type: 'Masala_Bhura', quantity: 20, unit_rate: 350, total_amount: 7000, supplier_name: 'Khan Rice Mill Bhura', remarks: 'Rice husk burning mix' },
+  { id: 1, entry_date: todayStr, item_type: 'Kuila', quantity: 30, unit_rate: 800, total_amount: 24000, paid_amount: 20000, supplier_name: 'Balochistan Coal Traders', remarks: 'High grade burning coal (Mounds)' },
+  { id: 2, entry_date: yesterdayStr, item_type: 'Lakri', quantity: 35, unit_rate: 400, total_amount: 14000, paid_amount: 14000, supplier_name: 'Burewala Timber Mart', remarks: 'Acacia (Kikar) dry firewood' },
+  { id: 3, entry_date: twoDaysAgoStr, item_type: 'Masala_Bhura', quantity: 20, unit_rate: 350, total_amount: 7000, paid_amount: 5000, supplier_name: 'Khan Rice Mill Bhura', remarks: 'Rice husk burning mix' },
 ];
 
 const SEED_INVOICES: SalesInvoice[] = [
@@ -666,9 +667,10 @@ export const bhattaService = {
   getFuelRecords(): FuelMasalaExpense[] {
     return loadFromStorage('fuel', SEED_FUEL);
   },
-  addFuelRecord(record: { entry_date: string; item_type: 'Lakri' | 'Kuila' | 'Masala_Bhura'; quantity: number; unit_rate: number; supplier_name: string; remarks: string }): FuelMasalaExpense {
+  addFuelRecord(record: { entry_date: string; item_type: 'Lakri' | 'Kuila' | 'Masala_Bhura'; quantity: number; unit_rate: number; paid_amount?: number; supplier_name: string; remarks: string }): FuelMasalaExpense {
     const list = this.getFuelRecords();
     const total_amount = Number(record.quantity) * Number(record.unit_rate);
+    const paid_amount = record.paid_amount !== undefined ? Number(record.paid_amount) : total_amount;
     const newRecord: FuelMasalaExpense = {
       id: Date.now(),
       entry_date: record.entry_date,
@@ -676,6 +678,7 @@ export const bhattaService = {
       quantity: Number(record.quantity),
       unit_rate: Number(record.unit_rate),
       total_amount,
+      paid_amount,
       supplier_name: record.supplier_name,
       remarks: record.remarks,
     };
@@ -695,6 +698,7 @@ export const bhattaService = {
     const quantity = data.quantity !== undefined ? Number(data.quantity) : existing.quantity;
     const unit_rate = data.unit_rate !== undefined ? Number(data.unit_rate) : existing.unit_rate;
     const total_amount = quantity * unit_rate;
+    const paid_amount = data.paid_amount !== undefined ? Number(data.paid_amount) : (existing.paid_amount ?? total_amount);
 
     const updated: FuelMasalaExpense = {
       ...existing,
@@ -702,6 +706,7 @@ export const bhattaService = {
       quantity,
       unit_rate,
       total_amount,
+      paid_amount,
     };
     list[idx] = updated;
     saveToStorage('fuel', list);
