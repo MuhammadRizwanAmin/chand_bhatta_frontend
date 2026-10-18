@@ -1,0 +1,158 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* ==========================================================================
+   Global Jameel Noori Nastaliq Typography
+   Apply to all HTML elements, forms, inputs, tables, buttons, headings
+   ========================================================================== */
+*,
+*::before,
+*::after,
+html,
+body,
+form,
+input,
+button,
+select,
+textarea,
+table,
+thead,
+tbody,
+tr,
+th,
+td,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+a,
+label,
+div {
+  font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq', 'JameelNooriNastaliq', 'Noto Nastaliq Urdu', 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Ensure Urdu headings & text maintain proper line-height for Nastaliq */
+h1, h2, h3, h4, h5, h6, .font-urdu, [lang="ur"] {
+  line-height: 1.8;
+  overflow: visible;
+}
+
+/* ==========================================================================
+   Print & PDF Export Engine Rules
+   Strictly forced with !important for print views & headless PDF renderers
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  /* Force Jameel Noori Nastaliq globally on ALL elements during print / PDF export */
+  *,
+  *::before,
+  *::after,
+  html,
+  body,
+  form,
+  input,
+  button,
+  select,
+  textarea,
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  span,
+  a,
+  label,
+  div {
+    font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq', 'JameelNooriNastaliq', 'Noto Nastaliq Urdu', serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide background app, screen buttons and control bars */
+  #root,
+  .print\\:hidden,
+  .invoice-modal-controls,
+  button {
+    display: none !important;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Modal portal wrapper reset for print */
+  .invoice-modal-portal {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .invoice-modal-card {
+    border: none !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Invoice Print Container - Exactly matches layout view on screen */
+  #invoice-print-container {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  #invoice-print-container * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+

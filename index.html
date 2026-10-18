@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chand Bricks Supplierz (چاند برکس سپلائرز) - Bhatta ERP & Sales App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/jameel-noori@1.1.2/jameel-noori.min.css" rel="stylesheet">
+    <style>
+      @font-face {
+        font-family: 'Jameel Noori Nastaliq';
+        src: local('Jameel Noori Nastaliq'),
+             local('Jameel Noori Nastaleeq'),
+             local('JameelNooriNastaliq'),
+             url('https://cdn.jsdelivr.net/npm/jameel-noori/fonts/jameel-noori-nastaleeq4.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      html, body { 
+        height: 100%; 
+        margin: 0; 
+        font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq', 'JameelNooriNastaliq', 'Noto Nastaliq Urdu', 'Plus Jakarta Sans', sans-serif;
+        background-color: #F8FAFC;
+        color: #0F172A;
+      } 
+      #root { height: 100%; }
+
+      /* Global Jameel Noori Nastaliq Typography */
+      *, *::before, *::after, body.lang-ur, .font-urdu, [lang="ur"] {
+        font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq', 'JameelNooriNastaliq', 'Noto Nastaliq Urdu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif;
+      }
+
+      /* Prevent Urdu accents (aerab, nuqte) from ever cutting off in headers, badges and buttons */
+      body.lang-ur button,
+      body.lang-ur a,
+      body.lang-ur h1,
+      body.lang-ur h2,
+      body.lang-ur h3,
+      body.lang-ur h4,
+      body.lang-ur span,
+      body.lang-ur p,
+      body.lang-ur th,
+      body.lang-ur td,
+      .font-urdu {
+        overflow: visible;
+        line-height: 1.85;
+      }
+
+      .font-nastaliq {
+        font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif;
+        line-height: 2.2 !important;
+        padding-top: 3px;
+        padding-bottom: 5px;
+        display: inline-block;
+        overflow: visible !important;
+      }
+
+      .font-display {
+        font-family: 'Outfit', sans-serif;
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#F8FAFC] text-[#0F172A] antialiased selection:bg-[#1D4ED8] selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
