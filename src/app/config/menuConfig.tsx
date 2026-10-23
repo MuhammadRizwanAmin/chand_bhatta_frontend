@@ -71,9 +71,9 @@ export const getAllMenuItems = (isUrdu?: boolean): MenuItem[] => [
     path: '/bhatta/bhatti',
   },
   {
-    name: isUrdu ? 'مزدور ایڈوانس' : 'Worker Advances',
-    nameUr: 'مزدور ایڈوانس',
-    nameEn: 'Worker Advances',
+    name: isUrdu ? 'مزدور سیٹلمنٹ' : 'Worker Settlement',
+    nameUr: 'مزدور سیٹلمنٹ',
+    nameEn: 'Worker Settlement',
     icon: <Coins size={20} />,
     path: '/bhatta/advances',
   },
@@ -83,13 +83,6 @@ export const getAllMenuItems = (isUrdu?: boolean): MenuItem[] => [
     nameEn: 'Labor & Staff',
     icon: <ClipboardList size={20} />,
     path: '/bhatta/employees',
-  },
-  {
-    name: isUrdu ? 'اسٹاک و مال گودام' : 'Stock Inventory',
-    nameUr: 'اسٹاک و مال گودام',
-    nameEn: 'Stock Inventory',
-    icon: <Package size={20} />,
-    path: '/bhatta/stock',
   },
   {
     name: isUrdu ? 'روزمرہ اخراجات' : 'Daily Expenses',

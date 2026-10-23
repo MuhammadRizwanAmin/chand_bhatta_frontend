@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   bhattaService,
   SalesInvoice,
   Customer,
+  DriverVehicle,
 } from '../../services/bhattaService';
 import {
   FileText,
@@ -21,19 +22,29 @@ import {
   Save,
   Layers,
   Download,
-  Edit2
+  Edit2,
+  User,
+  ChevronDown,
+  Plus,
+  Truck,
+  Filter
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import api from '../../services/api';
 import { BhattaInvoiceModal } from '../../components/BhattaInvoiceModal';
+import { DateRangeFilter, DateRange, getInitialTodayRange, isWithinDateRange } from '../../components/DateRangeFilter';
 
 export function SalesInvoiceBilling() {
-  const [invoices, setInvoices] = useState<SalesInvoice[]>(bhattaService.getInvoices());
-  const [customers, setCustomers] = useState<Customer[]>(bhattaService.getCustomers());
+  const [invoices, setInvoices] = useState<SalesInvoice[]>(() => bhattaService.getInvoices());
+  const [customers, setCustomers] = useState<Customer[]>(() => bhattaService.getCustomers());
+  const [driversVehicles, setDriversVehicles] = useState<DriverVehicle[]>(() => bhattaService.getDriversVehicles());
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>(getInitialTodayRange());
+
+  const handleDateFilterChange = (range: DateRange) => {
+    setDateRange(range);
+  };
   const [selectedInvoiceForModal, setSelectedInvoiceForModal] = useState<SalesInvoice | null>(null);
 
   // Invoice Modal Form (Create / Edit)
@@ -50,39 +61,179 @@ export function SalesInvoiceBilling() {
     driver_name: 'Iqbal Hussain (Trolley # 4821)',
   });
 
+  // Customer Autocomplete / Searchable Input State
+  const [customerInput, setCustomerInput] = useState('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Driver & Vehicle Autocomplete / Dropdown State
+  const [showDriverDropdown, setShowDriverDropdown] = useState(false);
+  const driverDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Quick Add Driver & Vehicle Modal State
+  const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
+  const [newVehicleForm, setNewVehicleForm] = useState({
+    driver_name: '',
+    vehicle_no: '',
+    vehicle_type: 'Tractor Trolley',
+    phone: '',
+  });
+
+  // Inline Customer Creation Modal State
+  const [showInlineCustomerModal, setShowInlineCustomerModal] = useState(false);
+  const [inlineCustomerForm, setInlineCustomerForm] = useState({
+    customer_name: '',
+    phone: '',
+    address: '',
+    opening_balance: 0,
+  });
+
+  const handleSaveInlineCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inlineCustomerForm.customer_name.trim()) return;
+    const newCust = bhattaService.saveCustomer({
+      customer_name: inlineCustomerForm.customer_name.trim(),
+      phone: inlineCustomerForm.phone.trim(),
+      address: inlineCustomerForm.address.trim(),
+      opening_balance: Number(inlineCustomerForm.opening_balance) || 0,
+    });
+    const updated = bhattaService.getCustomers();
+    setCustomers(updated);
+    setSelectedCustomerId(newCust.id);
+    setCustomerInput(newCust.customer_name);
+    if (newCust.address) {
+      setFormData(prev => ({ ...prev, destination_address: newCust.address || prev.destination_address }));
+    }
+    setShowInlineCustomerModal(false);
+    setInlineCustomerForm({ customer_name: '', phone: '', address: '', opening_balance: 0 });
+  };
+
   useEffect(() => {
     refreshData();
+  }, []);
+
+  // Close suggestion dropdowns on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (customerDropdownRef.current && !customerDropdownRef.current.contains(event.target as Node)) {
+        setShowCustomerDropdown(false);
+      }
+      if (driverDropdownRef.current && !driverDropdownRef.current.contains(event.target as Node)) {
+        setShowDriverDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const refreshData = () => {
     const invs = bhattaService.getInvoices();
     const custs = bhattaService.getCustomers();
+    const dvList = bhattaService.getDriversVehicles();
     setInvoices(invs);
     setCustomers(custs);
+    setDriversVehicles(dvList);
+
+    // Also fetch API vehicles if available and merge
+    api.get('/vehicles').then(res => {
+      const apiVehicles = res.data?.data || res.data || [];
+      if (Array.isArray(apiVehicles) && apiVehicles.length > 0) {
+        apiVehicles.forEach((v: any) => {
+          const vNo = v.plateNumber ? `${v.name || 'Vehicle'} #${v.plateNumber}` : (v.name || 'Vehicle');
+          const dName = v.driver || 'Driver';
+          if (!dvList.some(item => item.vehicle_no.toLowerCase() === vNo.toLowerCase())) {
+            bhattaService.saveDriverVehicle({
+              driver_name: dName,
+              vehicle_no: vNo,
+              vehicle_type: v.type || 'Tractor Trolley',
+              phone: '',
+            });
+          }
+        });
+        setDriversVehicles(bhattaService.getDriversVehicles());
+      }
+    }).catch(() => {
+      // offline/local mode fallback
+    });
+
     if (custs.length > 0 && !formData.customer_id) {
       setFormData(prev => ({ ...prev, customer_id: custs[0].id }));
     }
   };
 
-  const handleCustomerSelect = (id: number) => {
-    const cust = customers.find(c => c.id === id);
+  const handleSelectDriverVehicle = (item: DriverVehicle) => {
+    const formatted = `${item.driver_name} (${item.vehicle_no})`;
+    setFormData(prev => ({ ...prev, driver_name: formatted }));
+    setShowDriverDropdown(false);
+  };
+
+  const handleSaveNewVehicle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newVehicleForm.driver_name.trim() || !newVehicleForm.vehicle_no.trim()) {
+      alert('براہ کرم ڈرائیور کا نام اور گاڑی نمبر درج کریں (Driver name and vehicle number are required)');
+      return;
+    }
+    const created = bhattaService.saveDriverVehicle({
+      driver_name: newVehicleForm.driver_name.trim(),
+      vehicle_no: newVehicleForm.vehicle_no.trim(),
+      vehicle_type: newVehicleForm.vehicle_type,
+      phone: newVehicleForm.phone.trim(),
+    });
+    const updated = bhattaService.getDriversVehicles();
+    setDriversVehicles(updated);
+    const formatted = `${created.driver_name} (${created.vehicle_no})`;
+    setFormData(prev => ({ ...prev, driver_name: formatted }));
+    setShowAddVehicleModal(false);
+    setShowDriverDropdown(false);
+    setNewVehicleForm({ driver_name: '', vehicle_no: '', vehicle_type: 'Tractor Trolley', phone: '' });
+  };
+
+  const handleSelectCustomer = (cust: Customer) => {
+    setCustomerInput(cust.customer_name);
+    setSelectedCustomerId(cust.id);
     setFormData(prev => ({
       ...prev,
-      customer_id: id,
-      destination_address: cust?.address || prev.destination_address,
+      customer_id: cust.id,
+      destination_address: cust.address || prev.destination_address,
     }));
+    setShowCustomerDropdown(false);
+  };
+
+  const handleCustomerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomerInput(value);
+    setShowCustomerDropdown(true);
+
+    const match = customers.find(c => c.customer_name.trim().toLowerCase() === value.trim().toLowerCase());
+    if (match) {
+      setSelectedCustomerId(match.id);
+      setFormData(prev => ({
+        ...prev,
+        customer_id: match.id,
+        destination_address: match.address || prev.destination_address,
+      }));
+    } else {
+      setSelectedCustomerId(null);
+    }
   };
 
   const handleOpenCreate = () => {
     setEditingInvoiceId(null);
+    const defaultCust = customers[0];
+    setCustomerInput(defaultCust ? defaultCust.customer_name : '');
+    setSelectedCustomerId(defaultCust ? defaultCust.id : null);
+    setShowCustomerDropdown(false);
     setFormData({
-      customer_id: customers[0]?.id || 1,
+      customer_id: defaultCust?.id || 1,
       invoice_date: new Date().toISOString().split('T')[0],
       item_type: 'Aent_Aval',
       quantity: 10000,
       rate_per_thousand: 14000,
       kiraya_freight: 5000,
-      destination_address: customers[0]?.address || 'Burewala Construction Site',
+      destination_address: defaultCust?.address || 'Burewala Construction Site',
       driver_name: 'Iqbal Hussain (Trolley # 4821)',
     });
     setIsModalOpen(true);
@@ -90,6 +241,11 @@ export function SalesInvoiceBilling() {
 
   const handleOpenEdit = (inv: SalesInvoice) => {
     setEditingInvoiceId(inv.id);
+    const cust = customers.find(c => c.id === inv.customer_id);
+    const name = inv.customer_name || cust?.customer_name || '';
+    setCustomerInput(name);
+    setSelectedCustomerId(inv.customer_id);
+    setShowCustomerDropdown(false);
     setFormData({
       customer_id: inv.customer_id,
       invoice_date: inv.invoice_date,
@@ -105,9 +261,41 @@ export function SalesInvoiceBilling() {
 
   const handleSubmitInvoice = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const enteredName = customerInput.trim();
+    if (!enteredName) {
+      alert('براہ کرم گاہک کا نام درج کریں (Please enter customer name)');
+      return;
+    }
+
+    // Determine final customer: match existing or create new customer in ledger
+    let finalCustId = selectedCustomerId;
+    let finalCustName = enteredName;
+
+    const foundExisting = customers.find(c =>
+      (finalCustId && c.id === finalCustId) ||
+      c.customer_name.trim().toLowerCase() === enteredName.toLowerCase()
+    );
+
+    if (foundExisting) {
+      finalCustId = foundExisting.id;
+      finalCustName = foundExisting.customer_name;
+    } else {
+      // Create new customer automatically so they appear in Customer Ledger
+      const newCust = bhattaService.saveCustomer({
+        customer_name: enteredName,
+        address: formData.destination_address || '',
+        phone: '',
+        opening_balance: 0,
+      });
+      finalCustId = newCust.id;
+      finalCustName = newCust.customer_name;
+    }
+
     if (editingInvoiceId) {
       const updatedInv = bhattaService.updateInvoice(editingInvoiceId, {
-        customer_id: Number(formData.customer_id),
+        customer_id: Number(finalCustId),
+        customer_name: finalCustName,
         invoice_date: formData.invoice_date,
         item_type: formData.item_type,
         quantity: Number(formData.quantity),
@@ -124,7 +312,8 @@ export function SalesInvoiceBilling() {
       }
     } else {
       const newInv = bhattaService.createSalesInvoice({
-        customer_id: Number(formData.customer_id),
+        customer_id: Number(finalCustId),
+        customer_name: finalCustName,
         invoice_date: formData.invoice_date,
         item_type: formData.item_type,
         quantity: Number(formData.quantity),
@@ -147,48 +336,39 @@ export function SalesInvoiceBilling() {
   };
 
   const isWithinDateFilter = (dateStr: string) => {
-    if (dateFilterMode === 'All') return true;
+    if (!startDate && !endDate) return true;
     if (!dateStr) return false;
-
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    if (dateFilterMode === 'Today') {
-      return dateStr === todayStr;
-    }
-
-    if (dateFilterMode === 'ThisWeek') {
-      const day = today.getDay();
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() + diffToMonday);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      const mondayStr = monday.toISOString().split('T')[0];
-      const sundayStr = sunday.toISOString().split('T')[0];
-      return dateStr >= mondayStr && dateStr <= sundayStr;
-    }
-
-    if (dateFilterMode === 'ThisMonth') {
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      return dateStr.startsWith(`${year}-${month}`);
-    }
-
-    if (dateFilterMode === 'Custom') {
-      if (customStartDate && dateStr < customStartDate) return false;
-      if (customEndDate && dateStr > customEndDate) return false;
-      return true;
-    }
-
+    if (startDate && dateStr < startDate) return false;
+    if (endDate && dateStr > endDate) return false;
     return true;
   };
+
+  const filteredCustomers = customers.filter(c => {
+    const q = customerInput.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.customer_name.toLowerCase().includes(q) ||
+      (c.phone && c.phone.includes(q)) ||
+      (c.address && c.address.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredDriversVehicles = driversVehicles.filter(dv => {
+    const q = (formData.driver_name || '').trim().toLowerCase();
+    if (!q) return true;
+    return (
+      dv.driver_name.toLowerCase().includes(q) ||
+      dv.vehicle_no.toLowerCase().includes(q) ||
+      (dv.vehicle_type && dv.vehicle_type.toLowerCase().includes(q)) ||
+      (dv.phone && dv.phone.includes(q))
+    );
+  });
 
   const filteredInvoices = invoices.filter(inv => {
     const matchesSearch = inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (inv.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       inv.destination_address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate = isWithinDateFilter(inv.invoice_date);
+    const matchesDate = isWithinDateRange(inv.invoice_date, dateRange);
     return matchesSearch && matchesDate;
   });
 
@@ -268,118 +448,104 @@ export function SalesInvoiceBilling() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header & Global Date Filter (Top-Bar Positioned) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-            <FileText className="text-[#1D4ED8]" />
-            Sales Billing & Branded Invoicing (سیلز بل و انوائس)
-          </h2>
-          <p className="text-xs sm:text-sm text-[#64748B]">
-            Generate official Chand Bricks Supplierz (AMD) invoices with automatic stock deduction and PDF export
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
+            <FileText className="text-[#1D4ED8]" size={24} />
+            <span>Sales & Billing (سیلز بلنگ)</span>
+          </h1>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            Generate official Chand Bricks Supplierz invoices with automatic stock deduction and PDF export
           </p>
         </div>
 
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <PlusCircle size={17} />
-          Create Sales Invoice (نیا بل بنائیں)
-        </button>
+        {/* Global Date Filter & Create Button */}
+        <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap">
+          <div className="shrink-0 max-w-full">
+            <DateRangeFilter onChange={handleDateFilterChange} />
+          </div>
+
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            <PlusCircle size={15} />
+            <span>Create Sales Invoice (نیا بل بنائیں)</span>
+          </button>
+        </div>
       </div>
 
       {/* 3 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-emerald-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Sales Invoiced (کل سیلز رقم)</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-              <TrendingUp size={16} />
+        <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-emerald-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Sales Invoiced (کل سیلز رقم)</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+              <TrendingUp size={15} />
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-700 font-mono">
+          <div className="text-2xl font-black text-emerald-700 font-mono leading-tight">
             Rs. {totalBilledRevenue.toLocaleString()}
           </div>
-          <p className="text-[11px] text-emerald-900 font-medium mt-1">Total revenue generated from bills</p>
+          <p className="text-[10px] text-emerald-900 font-medium mt-1">Total revenue generated from bills</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-blue-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Bricks Dispatched (سپلائی تعداد)</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
-              <Layers size={16} />
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-blue-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Bricks Dispatched (سپلائی تعداد)</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+              <Layers size={15} />
             </div>
           </div>
-          <div className="text-2xl font-black text-blue-950 font-mono">
+          <div className="text-2xl font-black text-blue-950 font-mono leading-tight">
             {totalQuantitySold.toLocaleString()} <span className="text-xs font-semibold text-blue-700">bricks</span>
           </div>
-          <p className="text-[11px] text-blue-900 font-medium mt-1">Delivered to construction sites</p>
+          <p className="text-[10px] text-blue-900 font-medium mt-1">Delivered to construction sites</p>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-amber-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Bills Issued (جاری کردہ انوائس)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <FileText size={16} />
+        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-500 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-amber-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Bills Issued (جاری کردہ انوائس)</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+              <FileText size={15} />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-900 font-mono">
+          <div className="text-2xl font-black text-amber-900 font-mono leading-tight">
             {filteredInvoices.length} <span className="text-xs font-semibold text-amber-700">بلز</span>
           </div>
-          <p className="text-[11px] text-amber-900 font-medium mt-1">Recorded with full audit trail</p>
+          <p className="text-[10px] text-amber-900 font-medium mt-1">Recorded with full audit trail</p>
         </div>
       </div>
 
-      {/* Search & Period Filter Bar */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="flex flex-wrap items-center gap-3 w-full">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search by invoice number, customer name or site..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-10 pr-4 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8] focus:bg-white transition-all"
-            />
-          </div>
+      {/* Search Input & Action Bar */}
+      <div className="bg-white rounded-xl shadow-xs p-4 border border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <input
+            type="text"
+            placeholder="Search by invoice number, customer name or site..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg text-xs text-[#0F172A] bg-slate-50 focus:bg-white focus:outline-none focus:border-[#1D4ED8]"
+          />
+        </div>
 
-          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-[#64748B]" />
-            <select
-              value={dateFilterMode}
-              onChange={(e) => setDateFilterMode(e.target.value as any)}
-              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
-            >
-              <option value="All">All Time (تمام بلز)</option>
-              <option value="Today">Today (آج کی سیلز)</option>
-              <option value="ThisWeek">This Week (اس ہفتے کی سیلز)</option>
-              <option value="ThisMonth">This Month (اس مہینے کی سیلز)</option>
-              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
-            </select>
-          </div>
-
-          {/* Custom Date Range Inputs */}
-          {dateFilterMode === 'Custom' && (
-            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
-              <span className="text-slate-500 text-[11px]">From:</span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-              <span className="text-slate-500 text-[11px]">To:</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-            </div>
-          )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadSalesInvoicesPDF}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 bg-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
+          >
+            <Download size={14} className="text-[#1D4ED8]" />
+            <span>PDF</span>
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 bg-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
+          >
+            <Printer size={14} />
+            <span>Print</span>
+          </button>
         </div>
       </div>
 
@@ -474,9 +640,9 @@ export function SalesInvoiceBilling() {
 
       {/* CREATE / EDIT SALES INVOICE MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between p-5 border-b border-[#E2E8F0] bg-[#0F172A] text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-xl shadow-2xl my-auto flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E2E8F0] bg-[#0F172A] text-white shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-[#1D4ED8] flex items-center justify-center font-bold text-white text-xs">
                   AMD
@@ -485,137 +651,365 @@ export function SalesInvoiceBilling() {
                   {editingInvoiceId ? 'Edit Sales Invoice (بل میں ترمیم کریں)' : 'Create Sales Invoice (چاند برکس نیا بل)'}
                 </h3>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+              >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitInvoice} className="p-6 space-y-4 text-[#0F172A]">
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Select Customer (گاہک) *</label>
-                  <select
-                    required
-                    value={formData.customer_id}
-                    onChange={(e) => handleCustomerSelect(Number(e.target.value))}
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                  >
-                    {customers.map(c => (
-                      <option key={c.id} value={c.id}>{c.customer_name} ({c.phone || c.address})</option>
-                    ))}
-                  </select>
+            <form onSubmit={handleSubmitInvoice} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-5 sm:p-6 space-y-4 text-[#0F172A] overflow-y-auto flex-1">
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Searchable / Free text customer input with suggestions */}
+                  <div className="relative" ref={customerDropdownRef}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Customer Name (گاہک کا نام) *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInlineCustomerForm({
+                            customer_name: customerInput.trim(),
+                            phone: '',
+                            address: '',
+                            opening_balance: 0,
+                          });
+                          setShowInlineCustomerModal(true);
+                        }}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 transition-colors"
+                      >
+                        <Plus size={12} />
+                        <span>+ نیا گاہک بنائیں (New)</span>
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        value={customerInput}
+                        onChange={handleCustomerInputChange}
+                        onFocus={() => setShowCustomerDropdown(true)}
+                        placeholder="گاہک کا نام لکھیں یا تلاش کریں..."
+                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-3 pr-8 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white placeholder:text-slate-400 font-medium"
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerDropdown(prev => !prev)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition-colors"
+                        title="گاہکوں کی فہرست دیکھیں"
+                      >
+                        <ChevronDown
+                          size={15}
+                          className={`transition-transform duration-200 ${showCustomerDropdown ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Customer Suggestion Dropdown */}
+                    {showCustomerDropdown && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-56 overflow-y-auto z-50 divide-y divide-slate-100">
+                        <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex justify-between items-center">
+                          <span>موجودہ گاہکوں کی تجاویز (Suggestions)</span>
+                          <span className="text-slate-400 font-mono">{filteredCustomers.length} گاہک</span>
+                        </div>
+
+                        {filteredCustomers.length > 0 ? (
+                          filteredCustomers.map(c => {
+                            const isSelected = c.id === selectedCustomerId;
+                            return (
+                              <div
+                                key={c.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectCustomer(c);
+                                }}
+                                className={`p-2.5 hover:bg-blue-50/80 transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                                  isSelected ? 'bg-blue-50/90 text-blue-900 font-medium' : 'text-slate-800'
+                                }`}
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                                    <User size={13} className="text-blue-600 shrink-0" />
+                                    <span className="truncate">{c.customer_name}</span>
+                                  </div>
+                                  {(c.phone || c.address) && (
+                                    <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 truncate">
+                                      {c.phone && <span className="font-mono">{c.phone}</span>}
+                                      {c.phone && c.address && <span>•</span>}
+                                      {c.address && <span className="truncate">{c.address}</span>}
+                                    </div>
+                                  )}
+                                </div>
+                                {isSelected && (
+                                  <span className="shrink-0 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 bg-blue-100/70 rounded">
+                                    منتخب شدہ
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="p-3 text-center text-xs text-slate-500">
+                            کوئی موجودہ گاہک نہیں ملا
+                          </div>
+                        )}
+
+                        {/* Quick create as new customer option */}
+                        {customerInput.trim() && !customers.some(c => c.customer_name.trim().toLowerCase() === customerInput.trim().toLowerCase()) && (
+                          <div
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedCustomerId(null);
+                              setShowCustomerDropdown(false);
+                            }}
+                            className="p-2.5 bg-blue-50/60 hover:bg-blue-100/80 border-t border-blue-200 transition-colors cursor-pointer flex items-center gap-2 text-xs font-semibold text-blue-900"
+                          >
+                            <Plus size={14} className="text-blue-600 shrink-0" />
+                            <div className="min-w-0">
+                              <div>نیا گاہک درج کریں: <strong>"{customerInput.trim()}"</strong></div>
+                              <div className="text-[10px] text-blue-700 font-normal">خودکار طریقے سے کسٹمر کھاتہ میں شامل ہو جائے گا</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Invoice Date (تاریخ) *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.invoice_date}
+                      onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                      className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Item Type (جنس) *</label>
+                    <select
+                      value={formData.item_type}
+                      onChange={(e) => setFormData({ ...formData, item_type: e.target.value as any })}
+                      className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
+                    >
+                      <option value="Aent_Aval">Aent Aval (اول اینٹ)</option>
+                      <option value="Aent_Doem">Aent Doem (دوئم اینٹ)</option>
+                      <option value="Aent_Soyem">Aent Soyem (سوئم اینٹ)</option>
+                      <option value="Tile">Tile (ٹائل)</option>
+                      <option value="Kacchi_Aent">Kacchi Aent (کچی اینٹ)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Quantity (تعداد) *</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      placeholder="مثلاً 5000"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value.replace(/[^0-9]/g, '') as any })}
+                      className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Rate / 1000 (ریٹ فی ہزار) *</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      required
+                      placeholder="مثلاً 12000"
+                      value={formData.rate_per_thousand}
+                      onChange={(e) => setFormData({ ...formData, rate_per_thousand: e.target.value.replace(/[^0-9.]/g, '') as any })}
+                      className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Kiraya / Freight Charge (کرایہ - Rs.)</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={formData.kiraya_freight}
+                      onChange={(e) => setFormData({ ...formData, kiraya_freight: e.target.value.replace(/[^0-9.]/g, '') as any })}
+                      className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
+                    />
+                  </div>
+                  <div className="relative" ref={driverDropdownRef}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Driver & Vehicle No (ڈرائیور / گاڑی)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddVehicleModal(true)}
+                        className="text-[10px] text-blue-700 font-semibold hover:text-blue-900 hover:underline flex items-center gap-0.5 cursor-pointer"
+                        title="نیا ڈرائیور یا گاڑی لسٹ میں شامل کریں"
+                      >
+                        <Plus size={11} />
+                        <span>نیا شامل کریں</span>
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.driver_name}
+                        onChange={(e) => {
+                          setFormData({ ...formData, driver_name: e.target.value });
+                          setShowDriverDropdown(true);
+                        }}
+                        onFocus={() => setShowDriverDropdown(true)}
+                        placeholder="ڈرائیور یا گاڑی منتخب کریں یا لکھیں..."
+                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-3 pr-8 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white placeholder:text-slate-400 font-medium"
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowDriverDropdown(prev => !prev)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition-colors"
+                        title="گاڑیوں و ڈرائیوروں کی لسٹ دیکھیں"
+                      >
+                        <ChevronDown
+                          size={15}
+                          className={`transition-transform duration-200 ${showDriverDropdown ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Driver & Vehicle Suggestions Dropdown */}
+                    {showDriverDropdown && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-52 overflow-y-auto z-50 divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-100">
+                        <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex justify-between items-center">
+                          <span>ڈرائیور و گاڑیوں کی فہرست ({filteredDriversVehicles.length})</span>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setShowDriverDropdown(false);
+                              setShowAddVehicleModal(true);
+                            }}
+                            className="text-blue-600 font-semibold hover:underline cursor-pointer"
+                          >
+                            + نیا شامل کریں
+                          </button>
+                        </div>
+
+                        {filteredDriversVehicles.length > 0 ? (
+                          filteredDriversVehicles.map(dv => {
+                            const formatted = `${dv.driver_name} (${dv.vehicle_no})`;
+                            const isSelected = formData.driver_name === formatted;
+                            return (
+                              <div
+                                key={dv.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectDriverVehicle(dv);
+                                }}
+                                className={`p-2.5 hover:bg-blue-50/80 transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                                  isSelected ? 'bg-blue-50/90 text-blue-900 font-medium' : 'text-slate-800'
+                                }`}
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                                    <Truck size={13} className="text-blue-600 shrink-0" />
+                                    <span className="truncate">{dv.driver_name}</span>
+                                    <span className="text-slate-500 font-normal font-mono text-[11px] truncate">({dv.vehicle_no})</span>
+                                  </div>
+                                  {(dv.vehicle_type || dv.phone) && (
+                                    <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 truncate">
+                                      {dv.vehicle_type && <span className="bg-slate-100 px-1.5 py-0.2 rounded text-[10px]">{dv.vehicle_type}</span>}
+                                      {dv.phone && <span className="font-mono">{dv.phone}</span>}
+                                    </div>
+                                  )}
+                                </div>
+                                {isSelected && (
+                                  <span className="shrink-0 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 bg-blue-100/70 rounded">
+                                    منتخب شدہ
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="p-3 text-center text-xs text-slate-500">
+                            کوئی ڈرائیور یا گاڑی نہیں ملی
+                          </div>
+                        )}
+
+                        {/* Quick option to use typed custom driver/vehicle */}
+                        {formData.driver_name?.trim() && !driversVehicles.some(dv => `${dv.driver_name} (${dv.vehicle_no})`.toLowerCase() === formData.driver_name.trim().toLowerCase()) && (
+                          <div
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setShowDriverDropdown(false);
+                            }}
+                            className="p-2.5 bg-blue-50/60 hover:bg-blue-100/80 border-t border-blue-200 transition-colors cursor-pointer flex items-center gap-2 text-xs font-semibold text-blue-900"
+                          >
+                            <Plus size={14} className="text-blue-600 shrink-0" />
+                            <div className="min-w-0">
+                              <div>استعمال کریں: <strong>"{formData.driver_name.trim()}"</strong></div>
+                              <div className="text-[10px] text-blue-700 font-normal">یہ ڈرائیور و گاڑی خودکار طریقے سے لسٹ میں شامل ہو جائے گی</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Invoice Date (تاریخ) *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.invoice_date}
-                    onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Item Type (جنس) *</label>
-                  <select
-                    value={formData.item_type}
-                    onChange={(e) => setFormData({ ...formData, item_type: e.target.value as any })}
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                  >
-                    <option value="Aent_Aval">Aent Aval (اول اینٹ)</option>
-                    <option value="Aent_Doem">Aent Doem (دوئم اینٹ)</option>
-                    <option value="Aent_Soyem">Aent Soyem (سوئم اینٹ)</option>
-                    <option value="Tile">Tile (ٹائل)</option>
-                    <option value="Kacchi_Aent">Kacchi Aent (کچی اینٹ)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Quantity (تعداد) *</label>
-                  <input
-                    type="number"
-                    step="500"
-                    required
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Rate / 1000 (ریٹ فی ہزار) *</label>
-                  <input
-                    type="number"
-                    step="100"
-                    required
-                    value={formData.rate_per_thousand}
-                    onChange={(e) => setFormData({ ...formData, rate_per_thousand: Number(e.target.value) })}
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Kiraya / Freight Charge (کرایہ - Rs.)</label>
-                  <input
-                    type="number"
-                    value={formData.kiraya_freight}
-                    onChange={(e) => setFormData({ ...formData, kiraya_freight: Number(e.target.value) })}
-                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Driver & Vehicle No (ڈرائیور / گاڑی)</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Delivery Destination Site (پتہ برائے ترسیل)</label>
                   <input
                     type="text"
-                    value={formData.driver_name}
-                    onChange={(e) => setFormData({ ...formData, driver_name: e.target.value })}
+                    value={formData.destination_address}
+                    onChange={(e) => setFormData({ ...formData, destination_address: e.target.value })}
                     className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
                   />
                 </div>
+
+                {/* Real-time Net Total Box */}
+                <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs space-y-1.5 text-blue-950">
+                  <div className="flex justify-between text-slate-700">
+                    <span>Base Brick Amount ({formData.quantity.toLocaleString()} @ Rs.{formData.rate_per_thousand.toLocaleString()}/1000):</span>
+                    <span className="font-mono font-medium">Rs. {baseCalculated.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-700">
+                    <span>Kiraya / Freight (کرایہ):</span>
+                    <span className="font-mono text-amber-800 font-medium">+ Rs. {Number(formData.kiraya_freight || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-[#0F172A] font-bold text-sm pt-2 border-t border-blue-200">
+                    <span>Net Total Amount (کل رقم):</span>
+                    <span className="font-mono text-[#1D4ED8] text-base">Rs. {netCalculated.toLocaleString()}</span>
+                  </div>
+                  <div className="text-[10px] text-emerald-700 flex items-center gap-1 mt-1 font-medium">
+                    <CheckCircle2 size={12} />
+                    <span>Automatic stock deduction of {formData.quantity.toLocaleString()} units upon saving.</span>
+                  </div>
+                </div>
+
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Delivery Destination Site (پتہ برائے ترسیل)</label>
-                <input
-                  type="text"
-                  value={formData.destination_address}
-                  onChange={(e) => setFormData({ ...formData, destination_address: e.target.value })}
-                  className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8] focus:bg-white"
-                />
-              </div>
-
-              {/* Real-time Net Total Box */}
-              <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200/80 text-xs space-y-1.5 text-blue-950">
-                <div className="flex justify-between text-slate-700">
-                  <span>Base Brick Amount ({formData.quantity.toLocaleString()} @ Rs.{formData.rate_per_thousand.toLocaleString()}/1000):</span>
-                  <span className="font-mono font-medium">Rs. {baseCalculated.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-700">
-                  <span>Kiraya / Freight (کرایہ):</span>
-                  <span className="font-mono text-amber-800 font-medium">+ Rs. {Number(formData.kiraya_freight || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-[#0F172A] font-bold text-sm pt-2 border-t border-blue-200">
-                  <span>Net Total Amount (کل رقم):</span>
-                  <span className="font-mono text-[#1D4ED8] text-base">Rs. {netCalculated.toLocaleString()}</span>
-                </div>
-                <div className="text-[10px] text-emerald-700 flex items-center gap-1 mt-1 font-medium">
-                  <CheckCircle2 size={12} />
-                  <span>Automatic stock deduction of {formData.quantity.toLocaleString()} units upon saving.</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
+              {/* Fixed Footer Buttons */}
+              <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[#E2E8F0] bg-slate-50 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -638,6 +1032,190 @@ export function SalesInvoiceBilling() {
         invoice={selectedInvoiceForModal}
         onClose={() => setSelectedInvoiceForModal(null)}
       />
+
+      {/* QUICK ADD DRIVER & VEHICLE MODAL */}
+      {showAddVehicleModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-4 py-3 bg-[#0F172A] text-white">
+              <div className="flex items-center gap-2">
+                <Truck size={16} className="text-blue-400" />
+                <h4 className="text-sm font-bold text-white">نیا ڈرائیور / گاڑی شامل کریں</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddVehicleModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewVehicle} className="p-4 space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Driver Name (ڈرائیور کا نام) *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثلاً: Iqbal Hussain"
+                  value={newVehicleForm.driver_name}
+                  onChange={(e) => setNewVehicleForm({ ...newVehicleForm, driver_name: e.target.value })}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Vehicle / Trolley No (گاڑی / ٹرالی نمبر) *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثلاً: Trolley # 4821 یا Truck LE-1234"
+                  value={newVehicleForm.vehicle_no}
+                  onChange={(e) => setNewVehicleForm({ ...newVehicleForm, vehicle_no: e.target.value })}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Vehicle Type (قسم)</label>
+                  <select
+                    value={newVehicleForm.vehicle_type}
+                    onChange={(e) => setNewVehicleForm({ ...newVehicleForm, vehicle_type: e.target.value })}
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-2.5 py-2 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                  >
+                    <option value="Tractor Trolley">Tractor Trolley (ٹریکٹر ٹرالی)</option>
+                    <option value="Truck">Truck (ٹرک)</option>
+                    <option value="Mazda">Mazda (مزدا)</option>
+                    <option value="Shahzore">Shahzore (شہزور)</option>
+                    <option value="Other">Other (دیگر)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Phone (موبائل نمبر)</label>
+                  <input
+                    type="text"
+                    placeholder="0300-1234567"
+                    value={newVehicleForm.phone}
+                    onChange={(e) => setNewVehicleForm({ ...newVehicleForm, phone: e.target.value })}
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddVehicleModal(false)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium cursor-pointer transition-colors"
+                >
+                  منسوخ کریں
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold cursor-pointer transition-colors shadow-sm"
+                >
+                  محفوظ کریں (Save)
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK INLINE CREATE CUSTOMER MODAL */}
+      {showInlineCustomerModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-200 bg-[#0F172A] text-white">
+              <div className="flex items-center gap-2">
+                <User size={18} className="text-[#1D4ED8]" />
+                <h3 className="font-bold text-sm text-white">
+                  Add New Customer Profile (نیا گاہک بنائیں)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInlineCustomerModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveInlineCustomer} className="p-5 space-y-3.5 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Customer / Contractor Name (گاہک یا ٹھیکیدار کا نام) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثلاً: ملک ارشد بلڈر، حاجی اسلم وغیرہ"
+                  value={inlineCustomerForm.customer_name}
+                  onChange={(e) => setInlineCustomerForm({ ...inlineCustomerForm, customer_name: e.target.value })}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Phone Number (موبائل نمبر)
+                </label>
+                <input
+                  type="text"
+                  placeholder="0300-1234567"
+                  value={inlineCustomerForm.phone}
+                  onChange={(e) => setInlineCustomerForm({ ...inlineCustomerForm, phone: e.target.value })}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Site / Delivery Address (تعمیراتی سائٹ یا پتہ)
+                </label>
+                <input
+                  type="text"
+                  placeholder="مثلاً: چیچہ وطنی بائی پاس، بوریوالا"
+                  value={inlineCustomerForm.address}
+                  onChange={(e) => setInlineCustomerForm({ ...inlineCustomerForm, address: e.target.value })}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Opening Balance / سابقہ بقایا ادھار (PKR)
+                </label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={inlineCustomerForm.opening_balance}
+                  onChange={(e) => setInlineCustomerForm({ ...inlineCustomerForm, opening_balance: Number(e.target.value) })}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowInlineCustomerModal(false)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium cursor-pointer transition-colors"
+                >
+                  منسوخ کریں
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg font-bold cursor-pointer transition-colors shadow-sm"
+                >
+                  محفوظ کریں اور منتخب کریں (Save & Select)
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

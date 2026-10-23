@@ -1,54 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { bhattaService, SalesInvoice } from '../../services/bhattaService';
 import {
   TrendingUp,
   Coins,
   Package,
-  ArrowUpRight,
   PlusCircle,
   FileText,
   Receipt,
   AlertCircle,
   Layers,
   Scale,
+  Users,
   Building2,
-  Calendar
+  Calendar,
+  CheckCircle2,
+  ArrowRight,
+  ChevronDown,
+  X,
+  Filter
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
 import { Link } from 'react-router';
 import { BhattaInvoiceModal } from '../../components/BhattaInvoiceModal';
+import { DateRangeFilter, DateRange, getInitialTodayRange } from '../../components/DateRangeFilter';
 import { useLanguage } from '../../context/LanguageContext';
-import chandLogo from '../../../assets/chand_bricks_logo.jpg';
 
 export function BhattaDashboard() {
   const { isUrdu, t } = useLanguage();
-  const [stats, setStats] = useState(bhattaService.getExecutiveDashboardStats());
-  const [invoices, setInvoices] = useState(bhattaService.getInvoices().slice(0, 5));
+  const [dateRange, setDateRange] = useState<DateRange>(getInitialTodayRange());
+  const [stats, setStats] = useState(() => bhattaService.getExecutiveDashboardStats(getInitialTodayRange()));
+  const [invoices, setInvoices] = useState<SalesInvoice[]>(() => bhattaService.getInvoices().slice(0, 6));
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
 
-  useEffect(() => {
-    setStats(bhattaService.getExecutiveDashboardStats());
-    setInvoices(bhattaService.getInvoices().slice(0, 5));
+  const loadRealtimeData = useCallback((rangeToUse: DateRange) => {
+    setStats(bhattaService.getExecutiveDashboardStats(rangeToUse));
+    setInvoices(bhattaService.getInvoices().slice(0, 6));
   }, []);
 
-  // Cash Inflow vs Outflow chart data (last 7 days simulated or actual)
-  const cashFlowData = [
-    { day: isUrdu ? 'پیر' : 'Mon', Inflow: 220000, Outflow: 110000 },
-    { day: isUrdu ? 'منگل' : 'Tue', Inflow: 180000, Outflow: 95000 },
-    { day: isUrdu ? 'بدھ' : 'Wed', Inflow: 260000, Outflow: 140000 },
-    { day: isUrdu ? 'جمعرات' : 'Thu', Inflow: 190000, Outflow: 88000 },
-    { day: isUrdu ? 'جمعہ' : 'Fri', Inflow: 310000, Outflow: 165000 },
-    { day: isUrdu ? 'ہفتہ' : 'Sat', Inflow: 240000, Outflow: 130000 },
-    { day: isUrdu ? 'اتوار' : 'Sun', Inflow: 175000, Outflow: 72000 },
-  ];
+  const handleDateFilterChange = (range: DateRange) => {
+    setDateRange(range);
+    loadRealtimeData(range);
+  };
+
+  // Real-time synchronization across storage, focus, and custom update events
+  useEffect(() => {
+    loadRealtimeData(dateRange);
+
+    const handleDataChange = () => {
+      loadRealtimeData(dateRange);
+    };
+
+    window.addEventListener('bhatta_data_updated', handleDataChange);
+    window.addEventListener('storage', handleDataChange);
+    window.addEventListener('focus', handleDataChange);
+
+    return () => {
+      window.removeEventListener('bhatta_data_updated', handleDataChange);
+      window.removeEventListener('storage', handleDataChange);
+      window.removeEventListener('focus', handleDataChange);
+    };
+  }, [dateRange, loadRealtimeData]);
 
   // Stock overview
   const stockItems = [
@@ -92,51 +102,25 @@ export function BhattaDashboard() {
   return (
     <div className="space-y-6">
       
-      {/* Page Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+      {/* Page Header & Filter Controls (Top-Bar Positioned) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-xl font-bold text-[#0F172A]">
-            {isUrdu ? 'ڈیش بورڈ خلاصہ' : 'Dashboard Overview'}
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
+            <Building2 className="text-[#1D4ED8]" size={24} />
+            <span>{isUrdu ? 'ڈیش بورڈ خلاصہ' : 'Dashboard Overview'}</span>
           </h1>
-          <p className="text-xs text-[#64748B]">
-            {isUrdu ? 'بھٹہ کی مجموعی پیداوار، اسٹاک اور مالیاتی جائزہ' : 'Real-time production, stock & financial overview'}
+          <p className="text-xs text-[#64748B] mt-1">
+            {isUrdu ? 'بھٹہ کی مجموعی پیداوار، اسٹاک، تنخواہیں اور مالیاتی جائزہ' : 'Real-time production, stock, salaries & financial overview'}
           </p>
         </div>
 
-        {/* Quick Action Shortcuts */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <Link
-            to="/bhatta/billing"
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
-          >
-            <PlusCircle size={15} />
-            <span>{t('quickBillingBtn')}</span>
-          </Link>
-          <Link
-            to="/bhatta/kacchi"
-            className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 text-[#334155] rounded-lg text-xs font-semibold border border-[#CBD5E1] shadow-xs transition-colors cursor-pointer"
-          >
-            <Layers size={14} className="text-[#1D4ED8]" />
-            <span>{t('quickPathaiBtn')}</span>
-          </Link>
-          <Link
-            to="/bhatta/advances"
-            className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 text-[#334155] rounded-lg text-xs font-semibold border border-[#CBD5E1] shadow-xs transition-colors cursor-pointer"
-          >
-            <Coins size={14} className="text-[#D4A017]" />
-            <span>{t('menuAdvances')}</span>
-          </Link>
-          <Link
-            to="/bhatta/expenses"
-            className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 text-[#334155] rounded-lg text-xs font-semibold border border-[#CBD5E1] shadow-xs transition-colors cursor-pointer"
-          >
-            <Receipt size={14} className="text-emerald-600" />
-            <span>{t('quickExpenseBtn')}</span>
-          </Link>
+        {/* Global Filter Buttons Row (Strictly single horizontal row with inline custom inputs) */}
+        <div className="shrink-0 max-w-full">
+          <DateRangeFilter onChange={handleDateFilterChange} />
         </div>
       </div>
 
-      {/* 7 EXECUTIVE KPI CARDS (Total Production, Total Sales Amount, Total Received Amount, Total Pending Amount, Worker Advance, Total Expense, Net Profit) */}
+      {/* 7 STANDARDIZED EXECUTIVE KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
         
         {/* Card 1: Total Production */}
@@ -150,11 +134,11 @@ export function BhattaDashboard() {
             </div>
           </div>
           <div className="text-2xl font-black text-blue-950 font-mono leading-tight">
-            {stats.todayProduction.totalOverall.toLocaleString()} <span className="text-[10px] font-semibold text-blue-700">{isUrdu ? 'اینٹ' : 'units'}</span>
+            {((Number(stats.todayProduction.totalKacchiAll) || 0) + (Number(stats.todayProduction.totalNikasiAll) || 0) || Number(stats.todayProduction.totalOverall) || 0).toLocaleString()} <span className="text-[10px] font-semibold text-blue-700">{isUrdu ? 'اینٹ' : 'units'}</span>
           </div>
           <div className="mt-2 text-[10px] text-blue-900/90 flex items-center justify-between border-t border-blue-200/70 pt-1.5 font-medium">
-            <span>کچی: <strong className="text-blue-700 font-bold">{stats.todayProduction.totalKacchiAll?.toLocaleString()}</strong></span>
-            <span>پکی: <strong className="text-indigo-700 font-bold">{stats.todayProduction.totalNikasiAll?.toLocaleString()}</strong></span>
+            <span>کچی: <strong className="text-blue-700 font-bold">{(Number(stats.todayProduction.totalKacchiAll) || 0).toLocaleString()}</strong></span>
+            <span>پکی: <strong className="text-indigo-700 font-bold">{(Number(stats.todayProduction.totalNikasiAll) || 0).toLocaleString()}</strong></span>
           </div>
         </div>
 
@@ -176,11 +160,11 @@ export function BhattaDashboard() {
           </div>
         </div>
 
-        {/* Card 3: Total Recieved Amount */}
+        {/* Card 3: Total Received Amount */}
         <div className="bg-gradient-to-br from-cyan-50 via-teal-50/50 to-cyan-100/50 border border-cyan-300/80 border-t-4 border-t-cyan-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-900">
-              {isUrdu ? 'کل وصول شدہ رقم' : 'Total Recieved Amount'}
+              {isUrdu ? 'کل وصول شدہ رقم' : 'Total Received Amount'}
             </span>
             <div className="w-7 h-7 rounded-lg bg-cyan-600 text-white flex items-center justify-center shadow-xs">
               <Coins size={15} />
@@ -212,44 +196,42 @@ export function BhattaDashboard() {
           </div>
         </div>
 
-        {/* Card 5: Worker Advance */}
-        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/50 to-amber-100/50 border border-amber-300/80 border-t-4 border-t-amber-500 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        {/* Card 5: Total Salaries (Labor + Staff) */}
+        <div className="bg-gradient-to-br from-violet-50 via-purple-50/50 to-indigo-100/50 border border-indigo-300/80 border-t-4 border-t-indigo-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
-              {isUrdu ? 'مزدور ایڈوانس' : 'Worker Advance'}
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-900">
+              {isUrdu ? 'تنخواہیں (ادا و بقایا)' : 'Total Salaries'}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <Coins size={15} />
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+              <Users size={15} />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-900 font-mono leading-tight">
-            Rs. {stats.financials.totalWorkerAdvancesGiven.toLocaleString()}
+          <div className="text-2xl font-black text-indigo-950 font-mono leading-tight">
+            Rs. {stats.financials.totalSalariesPaid.toLocaleString()}
           </div>
-          <div className="mt-2 text-[10px] text-amber-900 font-medium flex items-center justify-between border-t border-amber-200/70 pt-1.5">
-            <span>{isUrdu ? 'لیبر ایڈوانس کھاتہ' : 'Active loans'}</span>
-            <Link to="/bhatta/advances" className="text-blue-700 hover:underline font-bold">
-              {isUrdu ? 'حساب &rarr;' : 'Settle &rarr;'}
-            </Link>
+          <div className="mt-2 text-[10px] text-indigo-900/90 flex items-center justify-between border-t border-indigo-200/70 pt-1.5 font-medium">
+            <span>ادا: <strong className="text-emerald-700 font-bold">Rs. {stats.financials.totalSalariesPaid.toLocaleString()}</strong></span>
+            <span>بقایا: <strong className="text-rose-600 font-bold">Rs. {stats.financials.totalSalariesRemaining.toLocaleString()}</strong></span>
           </div>
         </div>
 
-        {/* Card 6: Total Expence (Vibrant Colored Card as requested) */}
-        <div className="bg-gradient-to-br from-amber-500 via-rose-600 to-red-600 text-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all relative overflow-hidden group border-0">
-          <div className="flex items-center justify-between text-white/90 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-100">
-              {isUrdu ? 'کل اخراجات' : 'Total Expence'}
+        {/* Card 6: Total Expenses (Integrated with Salaries & Matti Trolley) */}
+        <div className="bg-gradient-to-br from-amber-50 via-orange-50/50 to-red-100/50 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+              {isUrdu ? 'کل اخراجات' : 'Total Expense'}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center backdrop-blur-xs">
+            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs">
               <Receipt size={15} />
             </div>
           </div>
-          <div className="text-2xl font-black text-white font-mono leading-tight">
+          <div className="text-2xl font-black text-amber-950 font-mono leading-tight">
             Rs. {stats.financials.totalAllExpenses.toLocaleString()}
           </div>
-          <div className="mt-2 text-[10px] text-amber-100/90 flex items-center justify-between border-t border-white/20 pt-1.5 font-medium">
-            <span>مٹی، کوئلہ، مزدور، روزمرہ</span>
-            <Link to="/bhatta/expenses" className="text-white hover:underline font-bold">
-              کھاتہ &rarr;
+          <div className="mt-2 text-[10px] text-amber-900 font-medium flex items-center justify-between border-t border-amber-200/70 pt-1.5">
+            <span>{isUrdu ? 'مٹی، تنخواہ، کوئلہ، دیگر' : 'Clay, Salaries, Fuel'}</span>
+            <Link to="/bhatta/expenses" className="text-blue-700 hover:underline font-bold">
+              {isUrdu ? 'کھاتہ &rarr;' : 'Ledger &rarr;'}
             </Link>
           </div>
         </div>
@@ -275,7 +257,7 @@ export function BhattaDashboard() {
       </div>
 
       {/* QUICK STOCK INDICATORS (Aval, Doem, Soyem, Tiles, Kacchi) */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
@@ -283,15 +265,24 @@ export function BhattaDashboard() {
               <span>{isUrdu ? 'بھٹہ تیار مال و اسٹاک پوزیشن' : 'Bhatta Ready Stock & Inventory Indicators'}</span>
             </h3>
             <p className="text-xs text-[#64748B]">
-              {isUrdu ? 'کچی اینٹ زمین، پکی اینٹ بھٹی اور گودام میں تیار اینٹ کا لائیو ریکارڈ' : 'Live inventory counts across ground production, burning kiln, and finished stacks'}
+              {isUrdu ? 'کچی اینٹ، پکی اینٹ (اول، دوئم، سوئم) اور ٹائل کا لائیو اسٹاک ریکارڈ' : 'Live stock across raw bricks, baked grades (Aval, Doem, Soyem), and Tiles'}
             </p>
           </div>
-          <Link
-            to="/bhatta/stock"
-            className="text-xs text-[#1D4ED8] hover:underline font-semibold inline-flex items-center gap-1"
-          >
-            {isUrdu ? 'مکمل اسٹاک مینجمنٹ &rarr;' : 'Manage Stock Details &rarr;'}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/bhatta/kacchi"
+              className="text-xs text-[#1D4ED8] hover:underline font-semibold inline-flex items-center gap-1"
+            >
+              {isUrdu ? 'کچی اینٹ کھاتہ &rarr;' : 'Kacchi Stock &rarr;'}
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link
+              to="/bhatta/nikasi"
+              className="text-xs text-[#1D4ED8] hover:underline font-semibold inline-flex items-center gap-1"
+            >
+              {isUrdu ? 'پکی اینٹ کھاتہ &rarr;' : 'Pakki Stock &rarr;'}
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
@@ -299,11 +290,11 @@ export function BhattaDashboard() {
             <div
               key={item.key}
               className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
-                item.key === 'Aval' ? 'bg-amber-50/40 border-amber-200 hover:border-amber-400' :
-                item.key === 'Doem' ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' :
-                item.key === 'Soyem' ? 'bg-blue-50/40 border-blue-200 hover:border-blue-400' :
-                item.key === 'Tiles' ? 'bg-purple-50/40 border-purple-200 hover:border-purple-400' :
-                'bg-rose-50/40 border-rose-200 hover:border-rose-400'
+                item.key === 'aval' ? 'bg-amber-50/40 border-amber-200 hover:border-amber-400' :
+                item.key === 'doem' ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' :
+                item.key === 'soyem' ? 'bg-blue-50/40 border-blue-200 hover:border-blue-400' :
+                item.key === 'tile' ? 'bg-purple-50/40 border-purple-200 hover:border-purple-400' :
+                'bg-slate-50/70 border-slate-300 hover:border-slate-400'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -328,54 +319,89 @@ export function BhattaDashboard() {
         </div>
       </div>
 
-      {/* DAILY CASH INFLOW VS OUTFLOW & RECENT INVOICES */}
+      {/* DASHBOARD DETAILS & RECENT INVOICES (CLEAN LAYOUT WITHOUT CHARTS) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left: Cash Inflow vs Outflow Graph */}
-        <div className="lg:col-span-7 bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
-                <Coins size={18} className="text-[#D4A017]" />
-                <span>{isUrdu ? 'روزمرہ آمدن بنام خرچ (ہفتہ وار گراف)' : 'Daily Cash Inflow vs Outflow'}</span>
-              </h3>
-              <p className="text-xs text-[#64748B]">
-                {isUrdu ? 'آمدنی (سیلز و وصولی) اور اخراجات (ڈیزل، کوئلہ، مزدوری) کا بہاؤ' : 'Weekly financial liquidity and expenses flow'}
-              </p>
+        {/* Left: Quick Financial & Salary Distribution Summary */}
+        <div className="lg:col-span-5 bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
+                  <Receipt size={18} className="text-[#1D4ED8]" />
+                  <span>{isUrdu ? 'مالیاتی و اخراجاتی خلاصہ' : 'Financial & Expense Overview'}</span>
+                </h3>
+                <p className="text-xs text-[#64748B]">
+                  {isUrdu ? 'تنخواہیں، مزدور ایڈوانس، اور آپریشنل اخراجات' : 'Salaries, worker loans & operating expenditure'}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-                {isUrdu ? 'آمدن (وصولی)' : 'Inflow'}
-              </span>
-              <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
-                <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" />
-                {isUrdu ? 'خرچ (ادائیگی)' : 'Outflow'}
-              </span>
+
+            <div className="space-y-3.5">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">{isUrdu ? 'سٹاف تنخواہیں (ادا شدہ)' : 'Staff Salaries Paid'}</p>
+                  <p className="text-[11px] text-slate-500 font-mono">{isUrdu ? 'منیجر، منشی، ڈرائیور وغیرہ' : 'Staff monthly payout'}</p>
+                </div>
+                <p className="text-sm font-bold font-mono text-emerald-600">
+                  Rs. {stats.financials.totalStaffSalaryPaid.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">{isUrdu ? 'سٹاف تنخواہیں (بقایا)' : 'Staff Salaries Pending'}</p>
+                  <p className="text-[11px] text-slate-500 font-mono">{isUrdu ? 'اس مہینے کی واجب الادا رقم' : 'Due this month'}</p>
+                </div>
+                <p className="text-sm font-bold font-mono text-rose-600">
+                  Rs. {stats.financials.totalStaffSalaryRemaining.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">{isUrdu ? 'مزدور لیبر ایڈوانس' : 'Worker Advances'}</p>
+                  <p className="text-[11px] text-slate-500 font-mono">{isUrdu ? 'پتھیر، بھروائی، نکاسی مزدور' : 'Unsettled labor advances'}</p>
+                </div>
+                <p className="text-sm font-bold font-mono text-amber-600">
+                  Rs. {stats.financials.totalWorkerAdvancesGiven.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-emerald-900">{isUrdu ? 'کل اخراجات بمع تنخواہیں' : 'Total Expenses Inc. Salaries'}</p>
+                  <p className="text-[11px] text-emerald-700">{isUrdu ? 'تمام آپریشنل اخراجات و لیبر مٹی' : 'Total ledger expenses'}</p>
+                </div>
+                <p className="text-base font-extrabold font-mono text-emerald-800">
+                  Rs. {stats.financials.totalAllExpenses.toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="h-64 sm:h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={cashFlowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                <XAxis dataKey="day" stroke="#64748B" fontSize={12} tickLine={false} />
-                <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(val) => `Rs.${val / 1000}k`} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderRadius: '8px', fontSize: '12px', color: '#0F172A', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                  formatter={(value: any) => [`Rs. ${Number(value).toLocaleString()}`, '']}
-                />
-                <Bar dataKey="Inflow" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="Outflow" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <Link
+              to="/bhatta/staff"
+              className="text-xs font-semibold text-[#1D4ED8] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>{isUrdu ? 'سٹاف تنخواہ کھاتہ' : 'Staff Salaries'}</span>
+              <ArrowRight size={14} />
+            </Link>
+            <Link
+              to="/bhatta/expenses"
+              className="text-xs font-semibold text-[#1D4ED8] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>{isUrdu ? 'روزمرہ اخراجات' : 'Daily Expenses'}</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
 
         {/* Right: Recent Sales Invoices with Instant PDF/Print */}
-        <div className="lg:col-span-5 bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
                   <FileText size={18} className="text-[#1D4ED8]" />
@@ -390,30 +416,35 @@ export function BhattaDashboard() {
               </Link>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {invoices.map((inv) => (
                 <div
                   key={inv.id}
                   onClick={() => setSelectedInvoice(inv)}
-                  className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] hover:border-[#1D4ED8] hover:bg-white transition-all cursor-pointer flex items-center justify-between group"
+                  className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] hover:border-[#1D4ED8] hover:bg-white transition-all cursor-pointer flex flex-col justify-between group"
                 >
-                  <div className="min-w-0 pr-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-[#1D4ED8]">{inv.invoice_number}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/70 text-slate-700 font-medium">
-                        {inv.item_type.replace('_', ' ')}
-                      </span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#1D4ED8]">{inv.invoice_number}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/80 text-slate-700 font-medium capitalize">
+                          {inv.item_type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-[#0F172A] truncate mt-1">{inv.customer_name}</p>
                     </div>
-                    <p className="text-xs font-semibold text-[#0F172A] truncate mt-1">{inv.customer_name}</p>
-                    <p className="text-[11px] text-[#64748B] truncate font-mono">
-                      {inv.quantity.toLocaleString()} {isUrdu ? 'اینٹ' : 'units'} • {inv.invoice_date}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-xs font-mono font-bold text-emerald-600">
+                        Rs. {inv.net_total_amount.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-mono font-bold text-emerald-600">
-                      Rs. {inv.net_total_amount.toLocaleString()}
-                    </p>
-                    <span className="text-[10px] text-slate-500 group-hover:text-[#1D4ED8] transition-colors font-medium">
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-[#64748B]">
+                    <span className="font-mono">
+                      {inv.quantity.toLocaleString()} {isUrdu ? 'اینٹ' : 'units'} • {inv.invoice_date}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500 group-hover:text-[#1D4ED8] transition-colors">
                       {isUrdu ? 'پرنٹ بل &rarr;' : 'Print &rarr;'}
                     </span>
                   </div>

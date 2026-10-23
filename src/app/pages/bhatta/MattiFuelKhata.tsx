@@ -682,10 +682,12 @@ export function MattiFuelKhata() {
                 <div>
                   <label className="text-xs font-semibold text-[#334155] block mb-1">Trolley Count (تعداد ٹرالی) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     required
+                    placeholder="e.g. 5"
                     value={mattiForm.trolley_count}
-                    onChange={(e) => setMattiForm({ ...mattiForm, trolley_count: Number(e.target.value) })}
+                    onChange={(e) => setMattiForm({ ...mattiForm, trolley_count: e.target.value.replace(/[^0-9]/g, '') as any })}
                     className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
@@ -695,20 +697,24 @@ export function MattiFuelKhata() {
                 <div>
                   <label className="text-xs font-semibold text-[#334155] block mb-1">Rate / Trolley (ریٹ فی ٹرالی - Rs.) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 2500"
                     value={mattiForm.rate_per_trolley}
-                    onChange={(e) => setMattiForm({ ...mattiForm, rate_per_trolley: Number(e.target.value) })}
+                    onChange={(e) => setMattiForm({ ...mattiForm, rate_per_trolley: e.target.value.replace(/[^0-9.]/g, '') as any })}
                     className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-[#334155] block mb-1">Paid Amount (ادا شدہ رقم) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 12500"
                     value={mattiForm.paid_amount}
-                    onChange={(e) => setMattiForm({ ...mattiForm, paid_amount: Number(e.target.value) })}
+                    onChange={(e) => setMattiForm({ ...mattiForm, paid_amount: e.target.value.replace(/[^0-9.]/g, '') as any })}
                     className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
@@ -811,10 +817,12 @@ export function MattiFuelKhata() {
                 <div>
                   <label className="text-xs font-semibold text-[#334155] block mb-1">Quantity (وزن / بیگز) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 50"
                     value={fuelForm.quantity}
-                    onChange={(e) => setFuelForm({ ...fuelForm, quantity: Number(e.target.value) })}
+                    onChange={(e) => setFuelForm({ ...fuelForm, quantity: e.target.value.replace(/[^0-9.]/g, '') as any })}
                     className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
@@ -824,20 +832,24 @@ export function MattiFuelKhata() {
                 <div>
                   <label className="text-xs font-semibold text-[#334155] block mb-1">Unit Rate (ریٹ فی من / بیگ - Rs.) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 1500"
                     value={fuelForm.unit_rate}
-                    onChange={(e) => setFuelForm({ ...fuelForm, unit_rate: Number(e.target.value) })}
+                    onChange={(e) => setFuelForm({ ...fuelForm, unit_rate: e.target.value.replace(/[^0-9.]/g, '') as any })}
                     className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-[#334155] block mb-1">Paid Amount (ادا شدہ رقم) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 75000"
                     value={fuelForm.paid_amount}
-                    onChange={(e) => setFuelForm({ ...fuelForm, paid_amount: Number(e.target.value) })}
+                    onChange={(e) => setFuelForm({ ...fuelForm, paid_amount: e.target.value.replace(/[^0-9.]/g, '') as any })}
                     className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>

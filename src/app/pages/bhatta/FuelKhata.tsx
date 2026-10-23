@@ -17,14 +17,13 @@ import {
   Save,
   Search,
 } from 'lucide-react';
+import { DateRangeFilter, DateRange, getInitialTodayRange, isWithinDateRange } from '../../components/DateRangeFilter';
 
 export function FuelKhata() {
   const [records, setRecords] = useState<FuelMasalaExpense[]>(bhattaService.getFuelRecords());
   const [searchTerm, setSearchTerm] = useState('');
   const [itemTypeFilter, setItemTypeFilter] = useState<'All' | 'Lakri' | 'Kuila' | 'Masala_Bhura'>('All');
-  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>(getInitialTodayRange());
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,9 +31,9 @@ export function FuelKhata() {
   const [form, setForm] = useState({
     entry_date: new Date().toISOString().split('T')[0],
     item_type: 'Kuila' as 'Lakri' | 'Kuila' | 'Masala_Bhura',
-    quantity: 100,
-    unit_rate: 650,
-    paid_amount: 65000,
+    quantity: 100 as number | string,
+    unit_rate: 650 as number | string,
+    paid_amount: 65000 as number | string,
     supplier_name: 'Balochistan Coal Traders',
     remarks: 'Burning coal bags / mounds',
   });
@@ -45,44 +44,6 @@ export function FuelKhata() {
 
   const refreshData = () => {
     setRecords(bhattaService.getFuelRecords());
-  };
-
-  const isWithinDateFilter = (dateStr: string) => {
-    if (dateFilterMode === 'All') return true;
-    if (!dateStr) return false;
-
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    if (dateFilterMode === 'Today') {
-      return dateStr === todayStr;
-    }
-
-    if (dateFilterMode === 'ThisWeek') {
-      const day = today.getDay();
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() + diffToMonday);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      const mondayStr = monday.toISOString().split('T')[0];
-      const sundayStr = sunday.toISOString().split('T')[0];
-      return dateStr >= mondayStr && dateStr <= sundayStr;
-    }
-
-    if (dateFilterMode === 'ThisMonth') {
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      return dateStr.startsWith(`${year}-${month}`);
-    }
-
-    if (dateFilterMode === 'Custom') {
-      if (customStartDate && dateStr < customStartDate) return false;
-      if (customEndDate && dateStr > customEndDate) return false;
-      return true;
-    }
-
-    return true;
   };
 
   const handleOpenAdd = () => {
@@ -121,9 +82,9 @@ export function FuelKhata() {
       bhattaService.updateFuelRecord(editingId, {
         entry_date: form.entry_date,
         item_type: form.item_type,
-        quantity: Number(form.quantity),
-        unit_rate: Number(form.unit_rate),
-        paid_amount: Number(form.paid_amount),
+        quantity: Number(form.quantity) || 0,
+        unit_rate: Number(form.unit_rate) || 0,
+        paid_amount: Number(form.paid_amount) || 0,
         supplier_name: form.supplier_name,
         remarks: form.remarks,
       });
@@ -131,9 +92,9 @@ export function FuelKhata() {
       bhattaService.addFuelRecord({
         entry_date: form.entry_date,
         item_type: form.item_type,
-        quantity: Number(form.quantity),
-        unit_rate: Number(form.unit_rate),
-        paid_amount: Number(form.paid_amount),
+        quantity: Number(form.quantity) || 0,
+        unit_rate: Number(form.unit_rate) || 0,
+        paid_amount: Number(form.paid_amount) || 0,
         supplier_name: form.supplier_name,
         remarks: form.remarks,
       });
@@ -155,7 +116,7 @@ export function FuelKhata() {
       rec.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (rec.remarks || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesItem = itemTypeFilter === 'All' || rec.item_type === itemTypeFilter;
-    const matchesDate = isWithinDateFilter(rec.entry_date);
+    const matchesDate = isWithinDateRange(rec.entry_date, dateRange);
     return matchesSearch && matchesItem && matchesDate;
   });
 
@@ -167,8 +128,8 @@ export function FuelKhata() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header with DateRangeFilter on top right */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
             <Flame className="text-[#1D4ED8]" />
@@ -179,13 +140,10 @@ export function FuelKhata() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <PlusCircle size={16} />
-          Add Fuel Record (کوئلہ / ایندھن درج کریں)
-        </button>
+        {/* Global Date Filter Only */}
+        <div className="shrink-0 max-w-full">
+          <DateRangeFilter defaultOption="this_month" onChange={setDateRange} />
+        </div>
       </div>
 
       {/* 4 Amount-Relevant KPI Summary Cards */}
@@ -247,18 +205,18 @@ export function FuelKhata() {
         </div>
       </div>
 
-      {/* Filter Bar with Search & Period Filter Dropdown */}
+      {/* Filter & Search Bar with Add Fuel Record Button on Right */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 w-full">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto flex-1">
           {/* Search box */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
               placeholder="Search supplier or remarks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8]"
+              className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-9 pr-3 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8]"
             />
           </div>
 
@@ -266,53 +224,26 @@ export function FuelKhata() {
           <select
             value={itemTypeFilter}
             onChange={(e) => setItemTypeFilter(e.target.value as any)}
-            className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+            className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
           >
             <option value="All">تمام اقسام (All Fuels)</option>
             <option value="Kuila">کوئلہ (Coal)</option>
             <option value="Lakri">لکڑی (Firewood)</option>
             <option value="Masala_Bhura">بھورا / مصالحہ (Husk / Rice Dust)</option>
           </select>
-
-          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-[#64748B]" />
-            <select
-              value={dateFilterMode}
-              onChange={(e) => setDateFilterMode(e.target.value as any)}
-              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
-            >
-              <option value="All">All Time (تمام ریکارڈز)</option>
-              <option value="Today">Today (آج کا کھاتہ)</option>
-              <option value="ThisWeek">This Week (اس ہفتے کا کھاتہ)</option>
-              <option value="ThisMonth">This Month (اس مہینے کا کھاتہ)</option>
-              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
-            </select>
-          </div>
-
-          {/* Custom Date Range Inputs */}
-          {dateFilterMode === 'Custom' && (
-            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
-              <span className="text-slate-500 text-[11px]">From:</span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-              <span className="text-slate-500 text-[11px]">To:</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-            </div>
-          )}
         </div>
+
+        {/* Add Fuel Record Button on the Right */}
+        <button
+          onClick={handleOpenAdd}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer whitespace-nowrap self-stretch md:self-auto justify-center"
+        >
+          <PlusCircle size={16} />
+          <span>Add Fuel Record (کوئلہ / ایندھن درج کریں)</span>
+        </button>
       </div>
 
-      {/* Fuel Expenses Table */}
+      {/* Fuel Expenses Table (Remarks Column Removed) */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm">
         <div className="p-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -336,14 +267,13 @@ export function FuelKhata() {
                 <th className="py-3 px-4 text-right">Total Amount (رقم)</th>
                 <th className="py-3 px-4 text-right font-bold text-emerald-700">Paid Amount (ادا)</th>
                 <th className="py-3 px-4 text-right font-bold text-rose-600">Balance (بقایا)</th>
-                <th className="py-3 px-4">Remarks</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0] text-[#0F172A]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-8 text-center text-[#64748B]">
+                  <td colSpan={9} className="py-8 text-center text-[#64748B]">
                     No fuel / coal expense entries found for this selection.
                   </td>
                 </tr>
@@ -379,9 +309,6 @@ export function FuelKhata() {
                       <td className="py-3 px-4 text-right font-mono font-black text-rose-600">
                         Rs. {balance.toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 text-[#475569] max-w-xs truncate">
-                        {rec.remarks || '-'}
-                      </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -408,6 +335,7 @@ export function FuelKhata() {
           </table>
         </div>
       </div>
+
 
       {/* Add / Edit Fuel Modal */}
       {isModalOpen && createPortal(
@@ -475,14 +403,16 @@ export function FuelKhata() {
                     Quantity (تعداد / من) *
                   </label>
                   <input
-                    type="number"
-                    min="1"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 100"
                     value={form.quantity}
                     onChange={(e) => {
-                      const qty = Number(e.target.value);
-                      const total = qty * form.unit_rate;
-                      setForm({ ...form, quantity: qty, paid_amount: total });
+                      const val = e.target.value.replace(/[^0-9.]/g, '');
+                      const qty = Number(val) || 0;
+                      const rate = Number(form.unit_rate) || 0;
+                      setForm({ ...form, quantity: val as any, paid_amount: qty * rate });
                     }}
                     className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
@@ -492,14 +422,16 @@ export function FuelKhata() {
                     Rate / Unit (ریٹ فی من) *
                   </label>
                   <input
-                    type="number"
-                    min="1"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 650"
                     value={form.unit_rate}
                     onChange={(e) => {
-                      const rate = Number(e.target.value);
-                      const total = form.quantity * rate;
-                      setForm({ ...form, unit_rate: rate, paid_amount: total });
+                      const val = e.target.value.replace(/[^0-9.]/g, '');
+                      const rate = Number(val) || 0;
+                      const qty = Number(form.quantity) || 0;
+                      setForm({ ...form, unit_rate: val as any, paid_amount: qty * rate });
                     }}
                     className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
@@ -511,11 +443,15 @@ export function FuelKhata() {
                   Paid Amount (ادا شدہ رقم - Rs.) *
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   required
+                  placeholder="e.g. 65000"
                   value={form.paid_amount}
-                  onChange={(e) => setForm({ ...form, paid_amount: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    setForm({ ...form, paid_amount: val as any });
+                  }}
                   className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                 />
               </div>

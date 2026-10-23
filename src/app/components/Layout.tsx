@@ -22,7 +22,7 @@ export function Layout() {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
-          <main ref={mainRef} className="flex-1 overflow-y-auto px-4 pt-1">
+          <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-1">
             <Outlet />
           </main>
         </div>

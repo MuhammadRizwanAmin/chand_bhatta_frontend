@@ -8,95 +8,76 @@ import {
 import {
   Layers,
   PlusCircle,
-  Calendar,
   Trash2,
   Edit2,
   Coins,
-  TrendingUp,
-  Users,
   X,
   Save,
-  Printer,
-  Download,
-  Search
+  Search,
+  CheckCircle2,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { DateRangeFilter, DateRange, getInitialTodayRange, getInitialMonthRange, isWithinDateRange } from '../../components/DateRangeFilter';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function KacchiProductionKhata() {
-  const [records, setRecords] = useState<KacchiAentRecord[]>(bhattaService.getKacchiRecords());
-  const [employees, setEmployees] = useState<Employee[]>(bhattaService.getEmployees());
-  const [selectedWorker, setSelectedWorker] = useState<string>('All');
+  const { isUrdu } = useLanguage();
+  const [records, setRecords] = useState<KacchiAentRecord[]>(() => bhattaService.getKacchiRecords());
+  const [employees, setEmployees] = useState<Employee[]>(() => bhattaService.getEmployees());
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
-  const [customStartDate, setCustomStartDate] = useState<string>('');
-  const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [dateRange, setDateRange] = useState<DateRange>(getInitialMonthRange());
+  const [categoryFilter, setCategoryFilter] = useState<'All' | 'Kacchi_Aent' | 'Tile'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Paid' | 'Unpaid'>('All');
 
   // Add / Edit Record Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
-    employee_id: employees.find(e => e.role === 'Kacchi_Worker')?.id || employees[0]?.id || 1,
-    entry_date: new Date().toISOString().split('T')[0],
+    employee_id: 1,
+    entry_date: getInitialTodayRange().startDate,
+    item_type: 'Kacchi_Aent' as 'Kacchi_Aent' | 'Tile',
     quantity: 5000,
     rate_per_thousand: 1450,
+    status: 'Paid' as 'Paid' | 'Unpaid',
   });
-
-  useEffect(() => {
-    refreshData();
-  }, []);
 
   const refreshData = () => {
     setRecords(bhattaService.getKacchiRecords());
-    setEmployees(bhattaService.getEmployees());
+    const emps = bhattaService.getEmployees();
+    setEmployees(emps);
+    if (emps.length > 0 && !formData.employee_id) {
+      setFormData(prev => ({ ...prev, employee_id: emps[0].id }));
+    }
   };
 
-  const isWithinDateFilter = (dateStr: string) => {
-    if (dateFilterMode === 'All') return true;
-    if (!dateStr) return false;
+  useEffect(() => {
+    refreshData();
+    const handleUpdate = () => refreshData();
+    window.addEventListener('bhatta_data_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('bhatta_data_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
-    const entry = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const entryDay = new Date(entry);
-    entryDay.setHours(0, 0, 0, 0);
-
-    if (dateFilterMode === 'Today') {
-      return entryDay.getTime() === today.getTime();
-    }
-
-    if (dateFilterMode === 'ThisWeek') {
-      const dayOfWeek = today.getDay();
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-      startOfWeek.setHours(0, 0, 0, 0);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999);
-      return entryDay >= startOfWeek && entryDay <= endOfWeek;
-    }
-
-    if (dateFilterMode === 'ThisMonth') {
-      return entry.getFullYear() === today.getFullYear() && entry.getMonth() === today.getMonth();
-    }
-
-    if (dateFilterMode === 'Custom') {
-      if (customStartDate && dateStr < customStartDate) return false;
-      if (customEndDate && dateStr > customEndDate) return false;
-      return true;
-    }
-
-    return true;
-  };
+  const handleDateFilterChange = React.useCallback((range: DateRange) => {
+    setDateRange(range);
+  }, []);
 
   const handleOpenAdd = () => {
     setEditingId(null);
+    const defaultEmp = employees.find(e => e.role === 'Kacchi_Worker') || employees[0];
     setFormData({
-      employee_id: employees.find(e => e.role === 'Kacchi_Worker')?.id || employees[0]?.id || 1,
-      entry_date: new Date().toISOString().split('T')[0],
+      employee_id: defaultEmp ? defaultEmp.id : 1,
+      entry_date: dateRange.startDate || getInitialTodayRange().startDate,
+      item_type: 'Kacchi_Aent',
       quantity: 5000,
       rate_per_thousand: 1450,
+      status: 'Paid',
     });
     setIsModalOpen(true);
   };
@@ -106,8 +87,10 @@ export function KacchiProductionKhata() {
     setFormData({
       employee_id: rec.employee_id,
       entry_date: rec.entry_date,
+      item_type: rec.item_type || 'Kacchi_Aent',
       quantity: rec.quantity,
       rate_per_thousand: rec.rate_per_thousand,
+      status: rec.status || 'Paid',
     });
     setIsModalOpen(true);
   };
@@ -118,15 +101,19 @@ export function KacchiProductionKhata() {
       bhattaService.updateKacchiRecord(editingId, {
         employee_id: Number(formData.employee_id),
         entry_date: formData.entry_date,
+        item_type: formData.item_type,
         quantity: Number(formData.quantity),
         rate_per_thousand: Number(formData.rate_per_thousand),
+        status: formData.status,
       });
     } else {
       bhattaService.addKacchiRecord({
         employee_id: Number(formData.employee_id),
         entry_date: formData.entry_date,
+        item_type: formData.item_type,
         quantity: Number(formData.quantity),
         rate_per_thousand: Number(formData.rate_per_thousand),
+        status: formData.status,
       });
     }
     setIsModalOpen(false);
@@ -140,6 +127,11 @@ export function KacchiProductionKhata() {
     }
   };
 
+  const handleToggleStatus = (id: number) => {
+    bhattaService.toggleKacchiStatus(id);
+    refreshData();
+  };
+
   const getWorkerName = (empId: number) => {
     const emp = employees.find(e => e.id === empId);
     return emp ? emp.full_name : `Worker #${empId}`;
@@ -151,16 +143,26 @@ export function KacchiProductionKhata() {
     const matchesSearch = !searchTerm || 
       workerName.includes(searchTerm.toLowerCase()) || 
       String(rec.employee_id).includes(searchTerm);
-    const matchesWorker = selectedWorker === 'All' || String(rec.employee_id) === selectedWorker;
-    const matchesDate = isWithinDateFilter(rec.entry_date);
-    return matchesSearch && matchesWorker && matchesDate;
+    const matchesDate = isWithinDateRange(rec.entry_date, dateRange);
+    const itemType = rec.item_type || 'Kacchi_Aent';
+    const matchesCategory = categoryFilter === 'All' || itemType === categoryFilter;
+    const itemStatus = rec.status || 'Paid';
+    const matchesStatus = statusFilter === 'All' || itemStatus === statusFilter;
+
+    return matchesSearch && matchesDate && matchesCategory && matchesStatus;
   });
 
-  // Aggregated totals
-  const totalQuantity = filteredRecords.reduce((sum, r) => sum + r.quantity, 0);
-  const totalAmount = filteredRecords.reduce((sum, r) => sum + r.total_amount, 0);
+  // Aggregated totals for standard metrics
+  const totalProductionCount = filteredRecords.reduce((sum, r) => sum + r.quantity, 0);
+  const totalBricksCount = filteredRecords
+    .filter(r => (r.item_type || 'Kacchi_Aent') === 'Kacchi_Aent')
+    .reduce((sum, r) => sum + r.quantity, 0);
+  const totalTilesCount = filteredRecords
+    .filter(r => r.item_type === 'Tile')
+    .reduce((sum, r) => sum + r.quantity, 0);
+  const totalWagesPayable = filteredRecords.reduce((sum, r) => sum + r.total_amount, 0);
 
-  const handleDownloadKacchiPDF = () => {
+  const handleDownloadPDF = () => {
     try {
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
@@ -187,19 +189,21 @@ export function KacchiProductionKhata() {
       doc.setFontSize(9.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(29, 78, 216);
-      doc.text('KACCHI AENT PATHAI PRODUCTION AUDIT (کچی اینٹ پتھائی کھاتہ)', 148.5, 37.5, { align: 'center' });
+      doc.text('KACCHI AENT & TILE PRODUCTION AUDIT (کچی اینٹ و ٹائل پتھائی کھاتہ)', 148.5, 37.5, { align: 'center' });
 
       const tableRows = filteredRecords.map(rec => [
         rec.entry_date,
         getWorkerName(rec.employee_id),
+        (rec.item_type || 'Kacchi_Aent') === 'Tile' ? 'Tile (ٹائل)' : 'Kacchi Aent (کچی اینٹ)',
         rec.quantity.toLocaleString(),
         `Rs. ${rec.rate_per_thousand.toLocaleString()}`,
         `Rs. ${rec.total_amount.toLocaleString()}`,
+        rec.status || 'Paid',
       ]);
 
       autoTable(doc, {
         startY: 44,
-        head: [['Date', 'Pathair / Worker Name', 'Quantity (Bricks)', 'Rate / 1000', 'Total Wages (PKR)']],
+        head: [['Date', 'Worker / Pathair Name', 'Category', 'Quantity', 'Rate / 1000', 'Total Wages', 'Status']],
         body: tableRows,
         theme: 'grid',
         headStyles: { fillColor: [29, 78, 216], textColor: [255, 255, 255], fontStyle: 'bold' },
@@ -212,7 +216,7 @@ export function KacchiProductionKhata() {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(29, 78, 216);
-      doc.text(`Total Quantity: ${totalQuantity.toLocaleString()} bricks   |   Total Wages Payable: Rs. ${totalAmount.toLocaleString()}`, 280, finalY + 10.5, { align: 'right' });
+      doc.text(`Total Count: ${totalProductionCount.toLocaleString()} units   |   Total Wages: Rs. ${totalWagesPayable.toLocaleString()}`, 280, finalY + 10.5, { align: 'right' });
 
       doc.save(`Kacchi_Production_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (e) {
@@ -224,211 +228,298 @@ export function KacchiProductionKhata() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header & Global Date Filter (Top-Bar Positioned) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] flex items-center gap-2">
-            <Layers className="text-[#1D4ED8]" />
-            Kacchi Aent Production Khata (کچی اینٹ پتھائی کھاتہ)
-          </h2>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
+            <Layers className="text-[#1D4ED8]" size={24} />
+            <span>{isUrdu ? 'کچی اینٹ و ٹائل پتھائی کھاتہ' : 'Kacchi Aent & Tile Production Khata'}</span>
+          </h1>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            {isUrdu ? 'کچی اینٹ، ٹائل پتھائی، روزمرہ مزدور اجرت و اسٹاک ریکارڈ' : 'Raw bricks & tile pathai logs, wages & ground stock'}
+          </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <PlusCircle size={16} />
-          Add Pathai Entry (نیا اندراج)
-        </button>
-      </div>
+        {/* Global Date Filter */}
+        <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap">
+          <div className="shrink-0 max-w-full">
+            <DateRangeFilter defaultOption="this_month" onChange={handleDateFilterChange} />
+          </div>
 
-      {/* 3 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-blue-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Kacchi Bricks (کچی اینٹ کل تعداد)</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
-              <Layers size={16} />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-blue-950 font-mono">
-            {totalQuantity.toLocaleString()} <span className="text-xs font-semibold text-blue-700">bricks</span>
-          </div>
-        </div>
 
-        <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-emerald-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Pathai Wages (پتھائی مزدور رقم)</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-              <Coins size={16} />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-emerald-700 font-mono">
-            Rs. {totalAmount.toLocaleString()}
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-amber-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Average Rate / 1000 (پتھائی ریٹ فی ہزار)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <TrendingUp size={16} />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-amber-900 font-mono">
-            Rs. 1,450
-          </div>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 w-full">
-          {/* Search Box */}
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by worker name, ID... (مزدور تلاش کریں)"
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-            />
+      {/* 4 STANDARDIZED STOCK & PRODUCTION METRIC CARDS (IDENTICAL FORMAT TO PAKKI) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: Total Production Count */}
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-xs notranslate" translate="no">
+          <div className="flex items-center justify-between text-blue-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
+              {isUrdu ? 'کل کچی پیداوار' : 'Total Kacchi Stock'}
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+              <Layers size={15} />
+            </div>
           </div>
+          <div className="text-2xl font-black text-blue-950 font-mono leading-tight notranslate" translate="no">
+            <span key={`kacchi-tot-${totalProductionCount}`}>{Number(totalProductionCount).toLocaleString()}</span>{' '}
+            <span className="text-xs font-semibold text-blue-700">{isUrdu ? 'یونٹس' : 'units'}</span>
+          </div>
+          <div className="mt-2 text-[10px] text-blue-900/90 font-medium border-t border-blue-200/70 pt-1.5">
+            {isUrdu ? 'زمین پر موجود اینٹ و ٹائل' : 'Ground stock summary'}
+          </div>
+        </div>
 
-          {/* Worker Select */}
-          <div className="flex items-center gap-2">
-            <Users size={16} className="text-[#64748B]" />
-            <select
-              value={selectedWorker}
-              onChange={(e) => setSelectedWorker(e.target.value)}
-              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+        {/* Card 2: Bricks Count */}
+        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-xl p-4 shadow-xs notranslate" translate="no">
+          <div className="flex items-center justify-between text-amber-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+              {isUrdu ? 'کچی اینٹ تعداد' : 'Kacchi Bricks'}
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs">
+              <Layers size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-amber-950 font-mono leading-tight notranslate" translate="no">
+            <span key={`kacchi-brk-${totalBricksCount}`}>{Number(totalBricksCount).toLocaleString()}</span>{' '}
+            <span className="text-xs font-semibold text-amber-700">{isUrdu ? 'اینٹ' : 'bricks'}</span>
+          </div>
+          <div className="mt-2 text-[10px] text-amber-900/90 font-medium border-t border-amber-200/70 pt-1.5">
+            {isUrdu ? 'معیاری سائز کچی اینٹ' : 'Standard clay bricks'}
+          </div>
+        </div>
+
+        {/* Card 3: Tiles Count */}
+        <div className="bg-gradient-to-br from-purple-50 via-indigo-50/40 to-purple-100/40 border border-purple-300/80 border-t-4 border-t-purple-600 rounded-xl p-4 shadow-xs notranslate" translate="no">
+          <div className="flex items-center justify-between text-purple-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-900">
+              {isUrdu ? 'کچی ٹائل تعداد' : 'Kacchi Tiles'}
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
+              <Sparkles size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-purple-950 font-mono leading-tight notranslate" translate="no">
+            <span key={`kacchi-til-${totalTilesCount}`}>{Number(totalTilesCount).toLocaleString()}</span>{' '}
+            <span className="text-xs font-semibold text-purple-700">{isUrdu ? 'ٹائل' : 'tiles'}</span>
+          </div>
+          <div className="mt-2 text-[10px] text-purple-900/90 font-medium border-t border-purple-200/70 pt-1.5">
+            {isUrdu ? 'چھت و فرش والی کچی ٹائل' : 'Roof & flooring tiles'}
+          </div>
+        </div>
+
+        {/* Card 4: Total Wages Payable */}
+        <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-xl p-4 shadow-xs notranslate" translate="no">
+          <div className="flex items-center justify-between text-emerald-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
+              {isUrdu ? 'کل پتھائی اجرت' : 'Total Pathai Wages'}
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+              <Coins size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-emerald-700 font-mono leading-tight notranslate" translate="no">
+            <span key={`kacchi-wages-${totalWagesPayable}`}>Rs. {Number(totalWagesPayable).toLocaleString()}</span>
+          </div>
+          <div className="mt-2 text-[10px] text-emerald-900 font-medium border-t border-emerald-200/70 pt-1.5">
+            {isUrdu ? 'مزدوروں کی واجب الادا اجرت' : 'Wages payable'}
+          </div>
+        </div>
+
+      </div>
+
+      {/* FILTER & ACTIONS ROW */}
+      <div className="bg-white rounded-xl shadow-xs p-4 border border-[#E2E8F0] flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Left: Search input */}
+        <div className="relative flex-1 max-w-sm">
+          <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder={isUrdu ? 'پتھیر یا مزدور کا نام تلاش کریں...' : 'Search worker name...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+          />
+        </div>
+
+        {/* Center: Category & Status toggles */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Category Filter */}
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+            <button
+              onClick={() => setCategoryFilter('All')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                categoryFilter === 'All' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              <option value="All">All Workers (تمام مزدور)</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={String(emp.id)}>{emp.full_name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-[#64748B]" />
-            <select
-              value={dateFilterMode}
-              onChange={(e) => setDateFilterMode(e.target.value as any)}
-              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+              {isUrdu ? 'تمام' : 'All'}
+            </button>
+            <button
+              onClick={() => setCategoryFilter('Kacchi_Aent')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                categoryFilter === 'Kacchi_Aent' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              <option value="All">All Time (تمام ریکارڈز)</option>
-              <option value="Today">Today (آج کا کام)</option>
-              <option value="ThisWeek">This Week (اس ہفتے کا کام)</option>
-              <option value="ThisMonth">This Month (اس مہینے کا کام)</option>
-              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
-            </select>
+              {isUrdu ? 'اینٹ' : 'Bricks'}
+            </button>
+            <button
+              onClick={() => setCategoryFilter('Tile')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                categoryFilter === 'Tile' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {isUrdu ? 'ٹائل' : 'Tiles'}
+            </button>
           </div>
 
-          {/* Custom Date Range Inputs */}
-          {dateFilterMode === 'Custom' && (
-            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
-              <span className="text-slate-500 text-[11px]">From:</span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-              <span className="text-slate-500 text-[11px]">To:</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-            </div>
-          )}
+          {/* Status Filter */}
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+            <button
+              onClick={() => setStatusFilter('All')}
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                statusFilter === 'All' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              {isUrdu ? 'ادائیگی تمام' : 'Status: All'}
+            </button>
+            <button
+              onClick={() => setStatusFilter('Paid')}
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                statusFilter === 'Paid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              {isUrdu ? 'ادا شدہ' : 'Paid'}
+            </button>
+            <button
+              onClick={() => setStatusFilter('Unpaid')}
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                statusFilter === 'Unpaid' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              {isUrdu ? 'بقایا' : 'Unpaid'}
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Add Pathai Entry */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            <PlusCircle size={15} />
+            <span>{isUrdu ? 'نیا اندراج (پتھائی)' : 'Add Pathai Entry'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Records Table */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm">
+      {/* STANDARDIZED DATA TABLE */}
+      <div className="bg-white rounded-xl shadow-xs border border-[#E2E8F0] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#F8FAFC] text-[#64748B] font-semibold border-b border-[#E2E8F0] uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">Date (تاریخ)</th>
-                <th className="py-3 px-4">Pathair / Worker (پتھیر)</th>
-                <th className="py-3 px-4 text-right">Quantity (تعداد اینٹ)</th>
-                <th className="py-3 px-4 text-right">Rate / 1000 (مزدوری ریٹ)</th>
-                <th className="py-3 px-4 text-right bg-blue-50/50 text-[#1D4ED8] font-bold">Total Wages (کل اجرت)</th>
-                <th className="py-3 px-4 text-right">Action</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-[#E2E8F0] text-[11px] font-bold text-[#475569] uppercase tracking-wider">
+                <th className="py-3 px-4">{isUrdu ? 'تاریخ' : 'Date'}</th>
+                <th className="py-3 px-4">{isUrdu ? 'پتھیر / مزدور' : 'Pathair / Worker'}</th>
+                <th className="py-3 px-4">{isUrdu ? 'قسم' : 'Category'}</th>
+                <th className="py-3 px-4 text-right">{isUrdu ? 'تعداد' : 'Quantity'}</th>
+                <th className="py-3 px-4 text-right">{isUrdu ? 'ریٹ فی ہزار' : 'Rate / 1000'}</th>
+                <th className="py-3 px-4 text-right">{isUrdu ? 'کل اجرت' : 'Total Wages'}</th>
+                <th className="py-3 px-4 text-center">{isUrdu ? 'حالت' : 'Status'}</th>
+                <th className="py-3 px-4 text-center">{isUrdu ? 'کارروائی' : 'Actions'}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0] text-[#0F172A]">
+            <tbody className="divide-y divide-[#E2E8F0] text-xs">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#64748B]">
-                    No production entries recorded for this selection.
+                  <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                    {isUrdu ? 'اس فلٹر میں کوئی ریکارڈ موجود نہیں ہے' : 'No records found for the selected filter.'}
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((rec) => (
-                  <tr key={rec.id} className="hover:bg-[#F8FAFC] transition-colors">
-                    <td className="py-3 px-4 font-mono text-[#475569]">
-                      {rec.entry_date}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-[#0F172A]">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 text-[#1D4ED8] flex items-center justify-center font-bold text-[10px]">
-                          {getWorkerName(rec.employee_id)[0]}
+                filteredRecords.map((rec) => {
+                  const isTile = rec.item_type === 'Tile';
+                  const isPaid = (rec.status || 'Paid') === 'Paid';
+
+                  return (
+                    <tr key={rec.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-4 font-mono text-slate-600 whitespace-nowrap">
+                        {rec.entry_date}
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-[#0F172A]">
+                        {getWorkerName(rec.employee_id)}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          isTile 
+                            ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                          {isTile ? (isUrdu ? 'ٹائل' : 'Tile') : (isUrdu ? 'کچی اینٹ' : 'Kacchi Aent')}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#0F172A]">
+                        {rec.quantity.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-slate-600">
+                        Rs. {rec.rate_per_thousand.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
+                        Rs. {rec.total_amount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => handleToggleStatus(rec.id)}
+                          title="Click to toggle status"
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
+                            isPaid
+                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                              : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                          }`}
+                        >
+                          {isPaid ? <CheckCircle2 size={11} /> : <Clock size={11} />}
+                          <span>{isPaid ? 'Paid' : 'Unpaid'}</span>
+                        </button>
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleOpenEdit(rec)}
+                            className="p-1 text-slate-500 hover:text-[#1D4ED8] transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRecord(rec.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        <span>{getWorkerName(rec.employee_id)}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#0F172A]">
-                      {rec.quantity.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-[#64748B]">
-                      Rs. {rec.rate_per_thousand.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#10B981] bg-emerald-50/50">
-                      Rs. {rec.total_amount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleOpenEdit(rec)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-blue-600 transition-colors cursor-pointer"
-                          title="Edit Entry (ترمیم)"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRecord(rec.id)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
             {filteredRecords.length > 0 && (
-              <tfoot className="bg-[#F8FAFC] font-bold border-t-2 border-[#E2E8F0] text-[#0F172A]">
+              <tfoot className="bg-slate-50 border-t-2 border-slate-300 font-bold text-xs">
                 <tr>
-                  <td colSpan={2} className="py-3 px-4 text-right uppercase tracking-wider text-[#64748B]">
-                    Total:
+                  <td colSpan={3} className="py-3 px-4 text-slate-800">
+                    {isUrdu ? 'مجموعی ٹوٹل:' : 'Total Filtered:'}
                   </td>
-                  <td className="py-3 px-4 text-right font-mono text-[#1D4ED8] text-sm">
-                    {totalQuantity.toLocaleString()}
+                  <td className="py-3 px-4 text-right font-mono text-[#1D4ED8]">
+                    {totalProductionCount.toLocaleString()}
                   </td>
-                  <td></td>
-                  <td className="py-3 px-4 text-right font-mono text-[#10B981] text-sm">
-                    Rs. {totalAmount.toLocaleString()}
+                  <td className="py-3 px-4"></td>
+                  <td className="py-3 px-4 text-right font-mono text-emerald-600">
+                    Rs. {totalWagesPayable.toLocaleString()}
                   </td>
-                  <td></td>
+                  <td colSpan={2}></td>
                 </tr>
               </tfoot>
             )}
@@ -436,102 +527,171 @@ export function KacchiProductionKhata() {
         </div>
       </div>
 
-      {/* ADD / EDIT PRODUCTION MODAL (Rendered above everything via Portal) */}
-      {isModalOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl my-auto">
-            <div className="flex items-center justify-between p-5 border-b border-[#E2E8F0] bg-[#0F172A] text-white">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                {editingId ? <Edit2 size={18} className="text-[#1D4ED8]" /> : <PlusCircle size={18} className="text-[#1D4ED8]" />}
-                {editingId ? 'Edit Kacchi Production (کچی اینٹ پتھائی ترمیم)' : 'Add Kacchi Production (کچی پتھائی اندراج)'}
-              </h3>
+      {/* ADD / EDIT MODAL USING CREATE PORTAL TO PREVENT CLIPPING */}
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 px-5 border-b border-[#E2E8F0] bg-slate-50 shrink-0">
+              <div className="flex items-center gap-2">
+                <Layers size={18} className="text-[#1D4ED8]" />
+                <h3 className="text-base font-bold text-[#0F172A]">
+                  {editingId ? 'Edit Production Entry' : 'Add Production Entry'} (پتھائی اندراج)
+                </h3>
+              </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-200 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveRecord} className="p-6 space-y-4">
+            {/* Modal Body - Scrollable */}
+            <form onSubmit={handleSaveRecord} className="flex-1 overflow-y-auto p-5 space-y-4">
+              
+              {/* Category Selector (Bricks vs Tiles) */}
               <div>
-                <label className="text-xs font-semibold text-[#334155] block mb-1">Select Pathair Worker (مزدور منتخب کریں) *</label>
-                <select
-                  required
-                  value={formData.employee_id}
-                  onChange={(e) => setFormData({ ...formData, employee_id: Number(e.target.value) })}
-                  className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
-                >
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.role})</option>
-                  ))}
-                </select>
+                <label className="text-xs font-semibold text-[#334155] block mb-1.5">
+                  Category / مال کی قسم *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, item_type: 'Kacchi_Aent' })}
+                    className={`py-2 px-3 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      formData.item_type === 'Kacchi_Aent'
+                        ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400'
+                    }`}
+                  >
+                    <Layers size={14} />
+                    <span>کچی اینٹ (Kacchi Aent)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, item_type: 'Tile' })}
+                    className={`py-2 px-3 text-xs font-bold rounded-lg border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      formData.item_type === 'Tile'
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400'
+                    }`}
+                  >
+                    <Sparkles size={14} />
+                    <span>کچی ٹائل (Tile)</span>
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-[#334155] block mb-1">Entry Date (تاریخ اندراج) *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.entry_date}
-                  onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
-                  className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              {/* Worker & Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[#334155] block mb-1">Quantity of Bricks (تعداد اینٹ) *</label>
-                  <input
-                    type="number"
-                    step="500"
+                  <label className="text-xs font-semibold text-[#334155] block mb-1">Worker / Pathair (پتھیر) *</label>
+                  <select
                     required
+                    value={formData.employee_id}
+                    onChange={(e) => setFormData({ ...formData, employee_id: Number(e.target.value) })}
+                    className="w-full bg-white border border-[#CBD5E1] rounded-lg px-3 py-2 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+                  >
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.role.replace(/_/g, ' ')})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-[#334155] block mb-1">Entry Date (تاریخ) *</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.entry_date}
+                    onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
+                    className="w-full bg-white border border-[#CBD5E1] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
+                  />
+                </div>
+              </div>
+
+              {/* Quantity & Rate */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-[#334155] block mb-1">Quantity (تعداد) *</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="مثلاً 10000"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                    className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value.replace(/[^0-9]/g, '') as any })}
+                    className="w-full bg-white border border-[#CBD5E1] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
+
                 <div>
-                  <label className="text-xs font-semibold text-[#334155] block mb-1">Rate / 1000 Bricks (ریٹ فی ہزار) *</label>
+                  <label className="text-xs font-semibold text-[#334155] block mb-1">Rate / 1000 (ریٹ فی ہزار) *</label>
                   <input
-                    type="number"
-                    step="10"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="مثلاً 950"
                     value={formData.rate_per_thousand}
-                    onChange={(e) => setFormData({ ...formData, rate_per_thousand: Number(e.target.value) })}
-                    className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
+                    onChange={(e) => setFormData({ ...formData, rate_per_thousand: e.target.value.replace(/[^0-9.]/g, '') as any })}
+                    className="w-full bg-white border border-[#CBD5E1] rounded-lg px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
                 </div>
               </div>
 
-              {/* Live Calculation Display */}
-              <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs">
-                <div className="flex justify-between items-center text-[#475569]">
-                  <span>Calculation Formula:</span>
-                  <span className="font-mono text-[#64748B]">({formData.quantity} / 1000) &times; {formData.rate_per_thousand}</span>
-                </div>
-                <div className="flex justify-between items-center text-[#0F172A] font-bold mt-2 pt-2 border-t border-blue-200">
-                  <span>Total Labor Payable (کل اجرت):</span>
-                  <span className="text-sm font-mono text-[#1D4ED8]">
-                    Rs. {((formData.quantity / 1000) * formData.rate_per_thousand).toLocaleString()}
-                  </span>
+              {/* Status */}
+              <div>
+                <label className="text-xs font-semibold text-[#334155] block mb-1">Payment Status (ادائیگی حالت) *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: 'Paid' })}
+                    className={`py-1.5 px-3 text-xs font-bold rounded-lg border text-center transition-all cursor-pointer ${
+                      formData.status === 'Paid'
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-slate-600 border-slate-300'
+                    }`}
+                  >
+                    Paid (ادا شدہ)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: 'Unpaid' })}
+                    className={`py-1.5 px-3 text-xs font-bold rounded-lg border text-center transition-all cursor-pointer ${
+                      formData.status === 'Unpaid'
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-white text-slate-600 border-slate-300'
+                    }`}
+                  >
+                    Unpaid (بقایا)
+                  </button>
                 </div>
               </div>
 
+              {/* Total Wages Calculation display */}
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-between">
+                <span className="text-xs text-blue-900 font-semibold">{isUrdu ? 'کل اجرت رقم:' : 'Total Wages:'}</span>
+                <span className="text-sm font-mono font-bold text-[#1D4ED8]">
+                  Rs. {((Number(formData.quantity) / 1000.0) * Number(formData.rate_per_thousand)).toLocaleString()}
+                </span>
+              </div>
+
+              {/* Modal Footer */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-[#F1F5F9] text-[#475569] rounded-xl text-xs font-medium hover:bg-[#E2E8F0] transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-1.5 px-5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
                 >
-                  <Save size={15} />
-                  {editingId ? 'Update Record (ترمیم محفوظ کریں)' : 'Save Production Record'}
+                  <Save size={14} />
+                  <span>{editingId ? 'Update Entry' : 'Save Entry'}</span>
                 </button>
               </div>
             </form>

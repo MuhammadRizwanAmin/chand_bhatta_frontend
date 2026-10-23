@@ -262,11 +262,12 @@ export function StockInventory() {
               <div>
                 <label className="text-xs font-semibold text-[#334155] block mb-1">Quantity of Bricks / Tiles (تعداد) *</label>
                 <input
-                  type="number"
-                  step="500"
+                  type="text"
+                  inputMode="numeric"
                   required
+                  placeholder="مثلاً 1000"
                   value={adjustData.quantity}
-                  onChange={(e) => setAdjustData({ ...adjustData, quantity: Number(e.target.value) })}
+                  onChange={(e) => setAdjustData({ ...adjustData, quantity: e.target.value.replace(/[^0-9]/g, '') as any })}
                   className="w-full bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                 />
               </div>

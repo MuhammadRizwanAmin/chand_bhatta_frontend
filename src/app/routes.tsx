@@ -93,7 +93,6 @@ import { WorkerAdvanceSettlement } from './pages/bhatta/WorkerAdvanceSettlement'
 import { DailyExpensesKhata } from './pages/bhatta/DailyExpensesKhata';
 import { MattiKhata } from './pages/bhatta/MattiKhata';
 import { FuelKhata } from './pages/bhatta/FuelKhata';
-import { StockInventory } from './pages/bhatta/StockInventory';
 import { CustomerLedger } from './pages/bhatta/CustomerLedger';
 import { SalesInvoiceBilling } from './pages/bhatta/SalesInvoiceBilling';
 import { BhattaSettings } from './pages/bhatta/BhattaSettings';
@@ -132,7 +131,6 @@ export const router = createBrowserRouter([
           { path: 'bhatta/matti', Component: MattiKhata },
           { path: 'bhatta/fuel', Component: FuelKhata },
           { path: 'bhatta/matti-fuel', Component: MattiKhata },
-          { path: 'bhatta/stock', Component: StockInventory },
           { path: 'bhatta/customers', Component: CustomerLedger },
           { path: 'bhatta/billing', Component: SalesInvoiceBilling },
           { path: 'bhatta/settings', Component: BhattaSettings },

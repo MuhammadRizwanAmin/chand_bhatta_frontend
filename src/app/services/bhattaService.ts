@@ -26,18 +26,22 @@ export interface KacchiAentRecord {
   id: number;
   employee_id: number;
   entry_date: string;
+  item_type?: 'Kacchi_Aent' | 'Tile';
   quantity: number;
   rate_per_thousand: number;
   total_amount: number;
+  status?: 'Paid' | 'Unpaid';
 }
 
 export interface PakkiAentRecord {
   id: number;
   employee_id: number;
   entry_date: string;
+  item_type?: 'Pakki_Aent' | 'Tile';
   quantity: number;
   rate_per_thousand: number;
   total_amount: number;
+  status?: 'Paid' | 'Unpaid';
 }
 
 export interface BhattiLaborRecord {
@@ -45,6 +49,7 @@ export interface BhattiLaborRecord {
   employee_id: number;
   work_type: 'Bhari' | 'Nikasi';
   entry_date: string;
+  item_type?: 'Pakki_Aent' | 'Tile';
   quantity: number;
   rate_per_thousand: number;
   total_amount: number;
@@ -53,7 +58,9 @@ export interface BhattiLaborRecord {
   aval_qty?: number;
   doem_qty?: number;
   soyem_qty?: number;
+  tile_qty?: number;
   khangar_qty?: number;
+  status?: 'Paid' | 'Unpaid';
 }
 
 export interface WorkerAdvance {
@@ -62,6 +69,21 @@ export interface WorkerAdvance {
   advance_date: string;
   amount_paid: number;
   remarks: string;
+  status?: 'Paid' | 'Unpaid';
+}
+
+export interface StaffSalaryPayment {
+  id: number;
+  employee_id: number;
+  employee_name: string;
+  month_period: string; // e.g. "October 2026"
+  base_salary: number;
+  advance_deducted: number;
+  net_payable: number;
+  paid_amount: number;
+  payment_date: string;
+  status: 'Paid' | 'Unpaid';
+  remarks?: string;
 }
 
 export interface ExpenseCategory {
@@ -71,6 +93,7 @@ export interface ExpenseCategory {
 
 export interface DailyExpense {
   id: number;
+  title?: string;
   category_id: number;
   category_name?: string;
   expense_date: string;
@@ -78,6 +101,7 @@ export interface DailyExpense {
   payment_mode: 'Cash' | 'Bank_Transfer' | 'Cheque';
   paid_by: string;
   description: string;
+  is_salary_mapped?: boolean;
 }
 
 export interface MattiTrolleyRecord {
@@ -89,6 +113,7 @@ export interface MattiTrolleyRecord {
   paid_amount: number;
   supplier_name: string;
   remarks: string;
+  status?: 'Paid' | 'Unpaid';
 }
 
 export interface FuelMasalaExpense {
@@ -101,11 +126,12 @@ export interface FuelMasalaExpense {
   paid_amount: number;
   supplier_name: string;
   remarks: string;
+  status?: 'Paid' | 'Unpaid';
 }
 
 export interface StockInventory {
   id: number;
-  item_name: 'Aent_Aval' | 'Aent_Doem' | 'Aent_Soyem' | 'Tile' | 'Kacchi_Aent';
+  item_name: 'Aent_Aval' | 'Aent_Doem' | 'Aent_Soyem' | 'Tile' | 'Kacchi_Aent' | 'Kacchi_Tile';
   current_stock: number;
   last_updated?: string;
 }
@@ -145,6 +171,22 @@ export interface CustomerPayment {
   notes: string;
 }
 
+export interface DriverVehicle {
+  id: number;
+  driver_name: string;
+  vehicle_no: string;
+  vehicle_type?: string;
+  phone?: string;
+}
+
+const SEED_DRIVERS_VEHICLES: DriverVehicle[] = [
+  { id: 1, driver_name: 'Iqbal Hussain', vehicle_no: 'Trolley # 4821', vehicle_type: 'Tractor Trolley', phone: '0303-4455667' },
+  { id: 2, driver_name: 'Muhammad Asif', vehicle_no: 'Trolley # 3312', vehicle_type: 'Tractor Trolley', phone: '0301-2233445' },
+  { id: 3, driver_name: 'Rashid Gujjar', vehicle_no: 'Mazda Truck # 7810', vehicle_type: 'Truck', phone: '0305-9988776' },
+  { id: 4, driver_name: 'Tariq Mehmood', vehicle_no: 'Trolley # 5214', vehicle_type: 'Tractor Trolley', phone: '0306-6655443' },
+  { id: 5, driver_name: 'Sajid Ali', vehicle_no: 'Trolley # 9045', vehicle_type: 'Tractor Trolley', phone: '0308-1122334' },
+];
+
 // Initial Seed Data for Instant Realistic Pakistani Bhatta Experience
 const SEED_EMPLOYEES: Employee[] = [
   { id: 1, full_name: 'Munshi Sarwar', phone: '0304-6557345', cnic: '36104-1234567-1', role: 'Munshi', salary_type: 'Monthly_Salary', monthly_salary_amount: 45000, joining_date: '2023-01-10', status: 'Active' },
@@ -171,6 +213,7 @@ const SEED_CATEGORIES: ExpenseCategory[] = [
   { id: 5, category_name: 'Transport & Freight' },
   { id: 6, category_name: 'Staff Salary' },
   { id: 7, category_name: 'Miscellaneous' },
+  { id: 8, category_name: 'Matti Trolley' },
 ];
 
 const SEED_STOCKS: StockInventory[] = [
@@ -186,36 +229,66 @@ const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 const twoDaysAgoStr = new Date(Date.now() - 172800000).toISOString().split('T')[0];
 
 const SEED_KACCHI: KacchiAentRecord[] = [
-  { id: 1, employee_id: 2, entry_date: todayStr, quantity: 7500, rate_per_thousand: 1500, total_amount: 11250 },
-  { id: 2, employee_id: 7, entry_date: todayStr, quantity: 7500, rate_per_thousand: 1500, total_amount: 11250 },
-  { id: 3, employee_id: 2, entry_date: yesterdayStr, quantity: 7500, rate_per_thousand: 1500, total_amount: 11250 },
-  { id: 4, employee_id: 7, entry_date: yesterdayStr, quantity: 7500, rate_per_thousand: 1500, total_amount: 11250 },
+  { id: 1, employee_id: 2, entry_date: todayStr, item_type: 'Kacchi_Aent', quantity: 7500, rate_per_thousand: 1500, total_amount: 11250, status: 'Paid' },
+  { id: 2, employee_id: 7, entry_date: todayStr, item_type: 'Tile', quantity: 5000, rate_per_thousand: 1600, total_amount: 8000, status: 'Unpaid' },
+  { id: 3, employee_id: 2, entry_date: yesterdayStr, item_type: 'Kacchi_Aent', quantity: 7500, rate_per_thousand: 1500, total_amount: 11250, status: 'Paid' },
+  { id: 4, employee_id: 7, entry_date: yesterdayStr, item_type: 'Kacchi_Aent', quantity: 7500, rate_per_thousand: 1500, total_amount: 11250, status: 'Paid' },
 ];
 
 const SEED_BHATTI: BhattiLaborRecord[] = [
-  { id: 1, employee_id: 3, work_type: 'Bhari', entry_date: todayStr, quantity: 10000, rate_per_thousand: 500, total_amount: 5000 },
-  { id: 2, employee_id: 5, work_type: 'Nikasi', entry_date: todayStr, quantity: 10000, rate_per_thousand: 500, total_amount: 5000 },
-  { id: 3, employee_id: 3, work_type: 'Bhari', entry_date: yesterdayStr, quantity: 10000, rate_per_thousand: 500, total_amount: 5000 },
-  { id: 4, employee_id: 5, work_type: 'Nikasi', entry_date: yesterdayStr, quantity: 10000, rate_per_thousand: 500, total_amount: 5000 },
+  { id: 1, employee_id: 3, work_type: 'Bhari', entry_date: todayStr, item_type: 'Pakki_Aent', quantity: 10000, rate_per_thousand: 500, total_amount: 5000, status: 'Paid' },
+  { id: 2, employee_id: 5, work_type: 'Nikasi', entry_date: todayStr, item_type: 'Tile', quantity: 6000, rate_per_thousand: 520, total_amount: 3120, tile_qty: 6000, status: 'Unpaid' },
+  { id: 3, employee_id: 3, work_type: 'Bhari', entry_date: yesterdayStr, item_type: 'Pakki_Aent', quantity: 10000, rate_per_thousand: 500, total_amount: 5000, status: 'Paid' },
+  { id: 4, employee_id: 5, work_type: 'Nikasi', entry_date: yesterdayStr, item_type: 'Pakki_Aent', quantity: 10000, rate_per_thousand: 500, total_amount: 5000, aval_qty: 6000, doem_qty: 3000, soyem_qty: 1000, status: 'Paid' },
 ];
 
 const SEED_ADVANCES: WorkerAdvance[] = [
-  { id: 1, employee_id: 2, advance_date: twoDaysAgoStr, amount_paid: 8000, remarks: 'Family medical expense advance' },
-  { id: 2, employee_id: 3, advance_date: yesterdayStr, amount_paid: 6000, remarks: 'Ration kharcha advance' },
-  { id: 3, employee_id: 5, advance_date: todayStr, amount_paid: 5000, remarks: 'Home maintenance advance' },
-  { id: 4, employee_id: 7, advance_date: twoDaysAgoStr, amount_paid: 6000, remarks: 'Weekly labor advance' },
+  { id: 1, employee_id: 2, advance_date: twoDaysAgoStr, amount_paid: 8000, remarks: 'Family medical expense advance', status: 'Paid' },
+  { id: 2, employee_id: 3, advance_date: yesterdayStr, amount_paid: 6000, remarks: 'Ration kharcha advance', status: 'Paid' },
+  { id: 3, employee_id: 5, advance_date: todayStr, amount_paid: 5000, remarks: 'Home maintenance advance', status: 'Paid' },
+  { id: 4, employee_id: 7, advance_date: twoDaysAgoStr, amount_paid: 6000, remarks: 'Weekly labor advance', status: 'Paid' },
+];
+
+const SEED_STAFF_SALARIES: StaffSalaryPayment[] = [
+  {
+    id: 1,
+    employee_id: 1,
+    employee_name: 'Munshi Sarwar',
+    month_period: `${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()}`,
+    base_salary: 45000,
+    advance_deducted: 5000,
+    net_payable: 40000,
+    paid_amount: 40000,
+    payment_date: todayStr,
+    status: 'Paid',
+    remarks: 'Monthly Munshi Salary Paid Full',
+  },
+  {
+    id: 2,
+    employee_id: 6,
+    employee_name: 'Iqbal Hussain Driver',
+    month_period: `${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()}`,
+    base_salary: 32000,
+    advance_deducted: 4000,
+    net_payable: 28000,
+    paid_amount: 28000,
+    payment_date: todayStr,
+    status: 'Paid',
+    remarks: 'Driver Monthly Salary',
+  },
 ];
 
 const SEED_EXPENSES: DailyExpense[] = [
-  { id: 1, category_id: 1, category_name: 'Chai & Food', expense_date: todayStr, amount: 3500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Labor tea, biscuits & lunch' },
-  { id: 2, category_id: 2, category_name: 'Generator & Fuel', expense_date: todayStr, amount: 6500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Diesel for tractor trolley & tube well' },
-  { id: 3, category_id: 3, category_name: 'Machinery Maintenance', expense_date: yesterdayStr, amount: 3000, payment_mode: 'Cash', paid_by: 'Seth Haji Nasir', description: 'Gari grease and bearing replacement' },
-  { id: 4, category_id: 7, category_name: 'Miscellaneous', expense_date: yesterdayStr, amount: 2000, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Bhatta lighting bulbs & wires' },
+  { id: 1, title: 'Chai & Lunch', category_id: 1, category_name: 'Chai & Food', expense_date: todayStr, amount: 3500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Labor tea, biscuits & lunch' },
+  { id: 2, title: 'Tractor Diesel', category_id: 2, category_name: 'Generator & Fuel', expense_date: todayStr, amount: 6500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Diesel for tractor trolley & tube well' },
+  { id: 3, title: 'Machine Greasing', category_id: 3, category_name: 'Machinery Maintenance', expense_date: yesterdayStr, amount: 3000, payment_mode: 'Cash', paid_by: 'Seth Haji Nasir', description: 'Gari grease and bearing replacement' },
+  { id: 4, title: 'Matti Delivery', category_id: 8, category_name: 'Matti Trolley', expense_date: todayStr, amount: 12500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: '5 Trolleys Chikni Matti payment' },
+  { id: 5, title: 'Lighting & Cables', category_id: 7, category_name: 'Miscellaneous', expense_date: yesterdayStr, amount: 2000, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Bhatta lighting bulbs & wires' },
 ];
 
 const SEED_MATTI: MattiTrolleyRecord[] = [
-  { id: 1, entry_date: todayStr, trolley_count: 5, rate_per_trolley: 2500, total_amount: 12500, paid_amount: 12500, supplier_name: 'Akram Matti Supply', remarks: 'Good quality chikni matti (paid cash)' },
-  { id: 2, entry_date: yesterdayStr, trolley_count: 5, rate_per_trolley: 2500, total_amount: 12500, paid_amount: 12500, supplier_name: 'Akram Matti Supply', remarks: 'Paid fully via Cash' },
+  { id: 1, entry_date: todayStr, trolley_count: 5, rate_per_trolley: 2500, total_amount: 12500, paid_amount: 12500, supplier_name: 'Akram Matti Supply', remarks: 'Good quality chikni matti (paid cash)', status: 'Paid' },
+  { id: 2, entry_date: yesterdayStr, trolley_count: 5, rate_per_trolley: 2500, total_amount: 12500, paid_amount: 12500, supplier_name: 'Akram Matti Supply', remarks: 'Paid fully via Cash', status: 'Paid' },
 ];
 
 const SEED_FUEL: FuelMasalaExpense[] = [
@@ -319,6 +392,9 @@ function loadFromStorage<T>(key: string, defaultValue: T): T {
 function saveToStorage<T>(key: string, val: T): void {
   try {
     localStorage.setItem(`bhatta_${key}`, JSON.stringify(val));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('bhatta_data_updated', { detail: { key } }));
+    }
   } catch (err) {
     console.error('Failed to save to storage', err);
   }
@@ -397,27 +473,43 @@ export const bhattaService = {
   getKacchiRecords(): KacchiAentRecord[] {
     return loadFromStorage('kacchi', SEED_KACCHI);
   },
-  addKacchiRecord(record: { employee_id: number; entry_date: string; quantity: number; rate_per_thousand: number }): KacchiAentRecord {
+  addKacchiRecord(record: { employee_id: number; entry_date: string; item_type?: 'Kacchi_Aent' | 'Tile'; quantity: number; rate_per_thousand: number; status?: 'Paid' | 'Unpaid' }): KacchiAentRecord {
     const list = this.getKacchiRecords();
     const total_amount = (Number(record.quantity) / 1000.0) * Number(record.rate_per_thousand);
+    const itemType = record.item_type || 'Kacchi_Aent';
+    const status = record.status || 'Paid';
     const newRecord: KacchiAentRecord = {
       id: Date.now(),
       employee_id: record.employee_id,
       entry_date: record.entry_date,
+      item_type: itemType,
       quantity: Number(record.quantity),
       rate_per_thousand: Number(record.rate_per_thousand),
       total_amount,
+      status,
     };
     list.unshift(newRecord);
     saveToStorage('kacchi', list);
 
-    // Increment Kacchi ground stock
-    this.adjustStock('Kacchi_Aent', Number(record.quantity));
+    // Increment ground stock
+    if (itemType === 'Tile') {
+      this.adjustStock('Tile', Number(record.quantity));
+    } else {
+      this.adjustStock('Kacchi_Aent', Number(record.quantity));
+    }
     return newRecord;
   },
   deleteKacchiRecord(id: number): void {
     const list = this.getKacchiRecords().filter(r => r.id !== id);
     saveToStorage('kacchi', list);
+  },
+  toggleKacchiStatus(id: number): void {
+    const list = this.getKacchiRecords();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      list[idx].status = list[idx].status === 'Unpaid' ? 'Paid' : 'Unpaid';
+      saveToStorage('kacchi', list);
+    }
   },
   updateKacchiRecord(id: number, data: Partial<KacchiAentRecord>): KacchiAentRecord | null {
     const list = this.getKacchiRecords();
@@ -431,7 +523,8 @@ export const bhattaService = {
     // Adjust stock delta
     const diff = quantity - existing.quantity;
     if (diff !== 0) {
-      this.adjustStock('Kacchi_Aent', diff);
+      const stockKey = (data.item_type || existing.item_type) === 'Tile' ? 'Tile' : 'Kacchi_Aent';
+      this.adjustStock(stockKey, diff);
     }
 
     const updated: KacchiAentRecord = {
@@ -454,6 +547,7 @@ export const bhattaService = {
     employee_id: number;
     work_type: 'Bhari' | 'Nikasi';
     entry_date: string;
+    item_type?: 'Pakki_Aent' | 'Tile';
     quantity: number;
     rate_per_thousand: number;
     chamber_no?: string;
@@ -461,15 +555,20 @@ export const bhattaService = {
     aval_qty?: number;
     doem_qty?: number;
     soyem_qty?: number;
+    tile_qty?: number;
     khangar_qty?: number;
+    status?: 'Paid' | 'Unpaid';
   }): BhattiLaborRecord {
     const list = this.getBhattiRecords();
     const total_amount = (Number(record.quantity) / 1000.0) * Number(record.rate_per_thousand);
+    const itemType = record.item_type || 'Pakki_Aent';
+    const status = record.status || 'Paid';
     const newRecord: BhattiLaborRecord = {
       id: Date.now(),
       employee_id: record.employee_id,
       work_type: record.work_type,
       entry_date: record.entry_date,
+      item_type: itemType,
       quantity: Number(record.quantity),
       rate_per_thousand: Number(record.rate_per_thousand),
       total_amount,
@@ -478,22 +577,37 @@ export const bhattaService = {
       aval_qty: record.aval_qty,
       doem_qty: record.doem_qty,
       soyem_qty: record.soyem_qty,
+      tile_qty: record.tile_qty,
       khangar_qty: record.khangar_qty,
+      status,
     };
     list.unshift(newRecord);
     saveToStorage('bhatti', list);
 
     if (record.work_type === 'Bhari') {
       // Deduct from Kacchi ground stock as loaded into kiln
-      this.adjustStock('Kacchi_Aent', -Number(record.quantity));
+      this.adjustStock(itemType === 'Tile' ? 'Tile' : 'Kacchi_Aent', -Number(record.quantity));
     } else if (record.work_type === 'Nikasi') {
       // Unloaded out of kiln into finished stock
-      const aval = Number(record.aval_qty || record.quantity);
-      this.adjustStock('Aent_Aval', aval);
-      if (record.doem_qty) this.adjustStock('Aent_Doem', Number(record.doem_qty));
-      if (record.soyem_qty) this.adjustStock('Aent_Soyem', Number(record.soyem_qty));
+      if (itemType === 'Tile') {
+        const tQty = Number(record.tile_qty || record.quantity);
+        this.adjustStock('Tile', tQty);
+      } else {
+        const aval = Number(record.aval_qty || record.quantity);
+        this.adjustStock('Aent_Aval', aval);
+        if (record.doem_qty) this.adjustStock('Aent_Doem', Number(record.doem_qty));
+        if (record.soyem_qty) this.adjustStock('Aent_Soyem', Number(record.soyem_qty));
+      }
     }
     return newRecord;
+  },
+  toggleBhattiStatus(id: number): void {
+    const list = this.getBhattiRecords();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      list[idx].status = list[idx].status === 'Unpaid' ? 'Paid' : 'Unpaid';
+      saveToStorage('bhatti', list);
+    }
   },
   updateBhattiRecord(id: number, data: Partial<BhattiLaborRecord>): void {
     const list = this.getBhattiRecords();
@@ -522,7 +636,7 @@ export const bhattaService = {
   getAdvances(): WorkerAdvance[] {
     return loadFromStorage('advances', SEED_ADVANCES);
   },
-  addAdvance(record: { employee_id: number; advance_date: string; amount_paid: number; remarks: string }): WorkerAdvance {
+  addAdvance(record: { employee_id: number; advance_date: string; amount_paid: number; remarks: string; status?: 'Paid' | 'Unpaid' }): WorkerAdvance {
     const list = this.getAdvances();
     const newAdvance: WorkerAdvance = {
       id: Date.now(),
@@ -530,10 +644,31 @@ export const bhattaService = {
       advance_date: record.advance_date,
       amount_paid: Number(record.amount_paid),
       remarks: record.remarks,
+      status: record.status || 'Paid',
     };
     list.unshift(newAdvance);
     saveToStorage('advances', list);
     return newAdvance;
+  },
+  toggleWorkerAdvanceStatus(id: number): void {
+    const list = this.getAdvances();
+    const idx = list.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      list[idx].status = list[idx].status === 'Unpaid' ? 'Paid' : 'Unpaid';
+      saveToStorage('advances', list);
+    }
+  },
+  updateAdvance(id: number, data: Partial<WorkerAdvance>): WorkerAdvance | null {
+    const list = this.getAdvances();
+    const idx = list.findIndex(a => a.id === id);
+    if (idx === -1) return null;
+    list[idx] = {
+      ...list[idx],
+      ...data,
+      amount_paid: data.amount_paid !== undefined ? Number(data.amount_paid) : list[idx].amount_paid,
+    };
+    saveToStorage('advances', list);
+    return list[idx];
   },
   deleteAdvance(id: number): void {
     const list = this.getAdvances().filter(a => a.id !== id);
@@ -574,12 +709,13 @@ export const bhattaService = {
   getCategories(): ExpenseCategory[] {
     return loadFromStorage('expense_categories', SEED_CATEGORIES);
   },
-  addExpense(exp: { category_id: number; expense_date: string; amount: number; payment_mode: 'Cash' | 'Bank_Transfer' | 'Cheque'; paid_by: string; description: string }): DailyExpense {
+  addExpense(exp: { title?: string; category_id: number; expense_date: string; amount: number; payment_mode: 'Cash' | 'Bank_Transfer' | 'Cheque'; paid_by: string; description: string }): DailyExpense {
     const list = this.getExpenses();
     const cats = this.getCategories();
     const foundCat = cats.find(c => c.id === Number(exp.category_id));
     const newExp: DailyExpense = {
       id: Date.now(),
+      title: exp.title || (foundCat ? foundCat.category_name : 'Daily Expense'),
       category_id: Number(exp.category_id),
       category_name: foundCat ? foundCat.category_name : 'Miscellaneous',
       expense_date: exp.expense_date,
@@ -592,7 +728,7 @@ export const bhattaService = {
     saveToStorage('expenses', list);
     return newExp;
   },
-  updateExpense(id: number, exp: { category_id: number; expense_date: string; amount: number; payment_mode: 'Cash' | 'Bank_Transfer' | 'Cheque'; paid_by: string; description: string }): DailyExpense | null {
+  updateExpense(id: number, exp: { title?: string; category_id: number; expense_date: string; amount: number; payment_mode: 'Cash' | 'Bank_Transfer' | 'Cheque'; paid_by: string; description: string }): DailyExpense | null {
     const list = this.getExpenses();
     const cats = this.getCategories();
     const foundCat = cats.find(c => c.id === Number(exp.category_id));
@@ -600,6 +736,7 @@ export const bhattaService = {
     if (index === -1) return null;
     list[index] = {
       ...list[index],
+      title: exp.title || list[index].title || (foundCat ? foundCat.category_name : 'Daily Expense'),
       category_id: Number(exp.category_id),
       category_name: foundCat ? foundCat.category_name : 'Miscellaneous',
       expense_date: exp.expense_date,
@@ -794,9 +931,9 @@ export const bhattaService = {
     const invoices = this.getInvoices().filter(i => i.customer_id === customerId);
     const payments = this.getPayments().filter(p => p.customer_id === customerId);
 
-    const openingBalance = cust?.opening_balance || 0;
-    const totalBilled = invoices.reduce((sum, inv) => sum + inv.net_total_amount, 0);
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount_received, 0);
+    const openingBalance = Number(cust?.opening_balance) || 0;
+    const totalBilled = invoices.reduce((sum, inv) => sum + (Number(inv.net_total_amount) || 0), 0);
+    const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount_received) || 0), 0);
     const currentBalance = (openingBalance + totalBilled) - totalPaid;
 
     // Build timeline
@@ -805,24 +942,24 @@ export const bhattaService = {
         date: i.invoice_date,
         type: 'Invoice',
         ref: i.invoice_number,
-        description: `${i.item_type.replace('_', ' ')} (${i.quantity.toLocaleString()} units @ Rs.${i.rate_per_thousand}/thousand)`,
-        debit: i.net_total_amount,
+        description: `${(i.item_type || 'Item').replace('_', ' ')} (${(Number(i.quantity) || 0).toLocaleString()} units @ Rs.${Number(i.rate_per_thousand) || 0}/thousand)`,
+        debit: Number(i.net_total_amount) || 0,
         credit: 0,
       })),
       ...payments.map(p => ({
         date: p.payment_date,
         type: 'Payment',
         ref: p.reference_no || 'Cash Receipt',
-        description: `Payment via ${p.payment_mode} - ${p.notes || ''}`,
+        description: `Payment via ${p.payment_mode || 'Cash'} - ${p.notes || ''}`,
         debit: 0,
-        credit: p.amount_received,
+        credit: Number(p.amount_received) || 0,
       })),
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     let running = openingBalance;
     const ledger = timeline.map(row => {
-      running = running + row.debit - row.credit;
-      return { ...row, runningBalance: running };
+      running = running + (Number(row.debit) || 0) - (Number(row.credit) || 0);
+      return { ...row, balance: running, runningBalance: running };
     });
 
     return {
@@ -841,6 +978,7 @@ export const bhattaService = {
   },
   createSalesInvoice(invoice: {
     customer_id: number;
+    customer_name?: string;
     invoice_date: string;
     item_type: SalesInvoice['item_type'];
     quantity: number;
@@ -860,7 +998,7 @@ export const bhattaService = {
       id: Date.now(),
       invoice_number,
       customer_id: invoice.customer_id,
-      customer_name: cust?.customer_name || 'Direct Customer',
+      customer_name: invoice.customer_name || cust?.customer_name || 'Direct Customer',
       invoice_date: invoice.invoice_date,
       item_type: invoice.item_type,
       quantity: Number(invoice.quantity),
@@ -890,10 +1028,10 @@ export const bhattaService = {
     if (idx === -1) return null;
     const existing = list[idx];
 
-    let customer_name = existing.customer_name;
+    let customer_name = data.customer_name || existing.customer_name;
     if (data.customer_id && data.customer_id !== existing.customer_id) {
       const cust = this.getCustomers().find(c => c.id === data.customer_id);
-      if (cust) customer_name = cust.customer_name;
+      if (cust) customer_name = data.customer_name || cust.customer_name;
     }
 
     const quantity = data.quantity !== undefined ? Number(data.quantity) : existing.quantity;
@@ -931,46 +1069,180 @@ export const bhattaService = {
     return updated;
   },
 
+  // 11. Staff Salaries & Payroll Tracking
+  getStaffSalaries(): StaffSalaryPayment[] {
+    return loadFromStorage('staff_salaries', SEED_STAFF_SALARIES);
+  },
+  saveStaffSalary(salary: Partial<StaffSalaryPayment>): StaffSalaryPayment {
+    const list = this.getStaffSalaries();
+    if (salary.id) {
+      const idx = list.findIndex(s => s.id === salary.id);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...salary } as StaffSalaryPayment;
+        saveToStorage('staff_salaries', list);
+        return list[idx];
+      }
+    }
+    const newSal: StaffSalaryPayment = {
+      id: Date.now(),
+      employee_id: salary.employee_id || 1,
+      employee_name: salary.employee_name || 'Staff Member',
+      month_period: salary.month_period || `${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()}`,
+      base_salary: Number(salary.base_salary || 0),
+      advance_deducted: Number(salary.advance_deducted || 0),
+      net_payable: Number(salary.net_payable || (Number(salary.base_salary || 0) - Number(salary.advance_deducted || 0))),
+      paid_amount: Number(salary.paid_amount || (Number(salary.base_salary || 0) - Number(salary.advance_deducted || 0))),
+      payment_date: salary.payment_date || new Date().toISOString().split('T')[0],
+      status: salary.status || 'Paid',
+      remarks: salary.remarks || '',
+    };
+    list.unshift(newSal);
+    saveToStorage('staff_salaries', list);
+    return newSal;
+  },
+  toggleStaffSalaryStatus(id: number): StaffSalaryPayment | null {
+    const list = this.getStaffSalaries();
+    const idx = list.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+    list[idx].status = list[idx].status === 'Paid' ? 'Unpaid' : 'Paid';
+    saveToStorage('staff_salaries', list);
+    return list[idx];
+  },
+
+  getAllExpensesWithSalaries(): DailyExpense[] {
+    const directExpenses = this.getExpenses();
+    const staffSalaries = this.getStaffSalaries().filter(s => s.status === 'Paid');
+    const laborAdvances = this.getAdvances().filter(a => a.status !== 'Unpaid');
+    const emps = this.getEmployees();
+
+    const mappedSalaries: DailyExpense[] = [
+      ...staffSalaries.map(s => ({
+        id: -1000 - s.id,
+        title: `Staff Salary - ${s.employee_name}`,
+        category_id: 6,
+        category_name: 'Staff Salary',
+        expense_date: s.payment_date,
+        amount: s.paid_amount || s.net_payable,
+        payment_mode: 'Cash' as const,
+        paid_by: 'Munshi Sarwar',
+        description: `Staff Salary for ${s.month_period} (Advance Deducted: Rs. ${s.advance_deducted.toLocaleString()})`,
+        is_salary_mapped: true,
+      })),
+      ...laborAdvances.map(a => {
+        const emp = emps.find(e => e.id === a.employee_id);
+        return {
+          id: -2000 - a.id,
+          title: `Labor Advance - ${emp?.full_name || 'Worker'}`,
+          category_id: 6,
+          category_name: 'Staff Salary',
+          expense_date: a.advance_date,
+          amount: a.amount_paid,
+          payment_mode: 'Cash' as const,
+          paid_by: 'Munshi Sarwar',
+          description: `Worker Advance: ${a.remarks || 'Advance payout'}`,
+          is_salary_mapped: true,
+        };
+      }),
+    ];
+
+    return [...directExpenses, ...mappedSalaries].sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+  },
+
   // Executive Dashboard Aggregation
-  getExecutiveDashboardStats() {
+  getExecutiveDashboardStats(range?: { startDate: string; endDate: string }) {
     const today = new Date().toISOString().split('T')[0];
-    const kacchi = this.getKacchiRecords();
-    const bhatti = this.getBhattiRecords();
-    const invoices = this.getInvoices();
-    const payments = this.getPayments();
+    const kacchiAll = this.getKacchiRecords();
+    const bhattiAll = this.getBhattiRecords();
+    const invoicesAll = this.getInvoices();
+    const paymentsAll = this.getPayments();
     const customers = this.getCustomers();
-    const advances = this.getAdvances();
-    const expenses = this.getExpenses();
-    const matti = this.getMattiRecords();
-    const fuel = this.getFuelRecords();
+    const advancesAll = this.getAdvances();
+    const expensesAll = this.getExpenses();
+    const mattiAll = this.getMattiRecords();
+    const fuelAll = this.getFuelRecords();
     const stocks = this.getStocks();
+    const staffSalariesAll = this.getStaffSalaries();
+    const employeesAll = this.getEmployees();
 
-    const todayKacchiQty = kacchi.filter(k => k.entry_date === today).reduce((sum, k) => sum + k.quantity, 0);
-    const todayBhariQty = bhatti.filter(b => b.entry_date === today && b.work_type === 'Bhari').reduce((sum, b) => sum + b.quantity, 0);
-    const todayNikasiQty = bhatti.filter(b => b.entry_date === today && b.work_type === 'Nikasi').reduce((sum, b) => sum + b.quantity, 0);
+    const normalizeDate = (d?: string | number): string => {
+      if (!d) return '';
+      if (typeof d === 'number') d = new Date(d).toISOString();
+      let str = String(d).trim();
+      if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}/.test(str)) {
+        const parts = str.split(/[-/]/);
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+      return str.slice(0, 10).replace(/\//g, '-');
+    };
 
-    const totalKacchiQty = kacchi.reduce((sum, k) => sum + k.quantity, 0);
-    const totalNikasiQty = bhatti.filter(b => b.work_type === 'Nikasi').reduce((sum, b) => sum + b.quantity, 0);
+    const isDateInRange = (dateStr?: string) => {
+      if (!range || (!range.startDate && !range.endDate)) return true;
+      if (!dateStr) return true;
+      const target = normalizeDate(dateStr);
+      if (!target) return true;
+      const start = normalizeDate(range.startDate);
+      const end = normalizeDate(range.endDate);
+      if (start && target < start) return false;
+      if (end && target > end) return false;
+      return true;
+    };
+
+    const kacchi = kacchiAll.filter(k => isDateInRange(k.entry_date || (k as any).date || (k as any).created_at));
+    const bhatti = bhattiAll.filter(b => isDateInRange(b.entry_date || (b as any).date || (b as any).created_at));
+    const invoices = invoicesAll.filter(i => isDateInRange(i.invoice_date || (i as any).date || (i as any).created_at || (i as any).entry_date));
+    const payments = paymentsAll.filter(p => isDateInRange(p.payment_date || (p as any).date || (p as any).created_at));
+    const advances = advancesAll.filter(a => isDateInRange(a.advance_date || (a as any).date || (a as any).created_at));
+    const expenses = expensesAll.filter(e => isDateInRange(e.expense_date || (e as any).date || (e as any).created_at));
+    const matti = mattiAll.filter(m => isDateInRange(m.entry_date || (m as any).date || (m as any).created_at));
+    const fuel = fuelAll.filter(f => isDateInRange(f.entry_date || (f as any).date || (f as any).created_at));
+
+    const todayKacchiQty = kacchiAll.filter(k => normalizeDate(k.entry_date) === today).reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
+    const todayBhariQty = bhattiAll.filter(b => normalizeDate(b.entry_date) === today && b.work_type === 'Bhari').reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
+    const todayNikasiQty = bhattiAll.filter(b => normalizeDate(b.entry_date) === today && b.work_type === 'Nikasi').reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
+
+    const totalKacchiQty = kacchi.reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
+    const totalNikasiQty = bhatti.reduce((sum, b) => {
+      if (b.work_type === 'Nikasi' || !b.work_type) {
+        return sum + (Number(b.quantity) || 0);
+      }
+      return sum;
+    }, 0);
     const totalProductionAll = totalKacchiQty + totalNikasiQty;
 
-    const totalSalesRevenue = invoices.reduce((sum, i) => sum + i.net_total_amount, 0);
-    const totalPaymentsReceived = payments.reduce((sum, p) => sum + p.amount_received, 0);
-    const totalOpeningBalances = customers.reduce((sum, c) => sum + (c.opening_balance || 0), 0);
-    const totalOutstandingCustomerBalances = Math.max(0, (totalSalesRevenue + totalOpeningBalances) - totalPaymentsReceived);
+    const totalSalesRevenue = invoices.reduce((sum, i) => {
+      const val = Number(i.net_total_amount ?? (i as any).total_amount ?? (i as any).base_amount ?? (i as any).amount ?? 0);
+      return sum + val;
+    }, 0);
+    const totalPaymentsReceived = payments.reduce((sum, p) => sum + (Number(p.amount_received) || 0), 0);
+    const totalOpeningBalances = customers.reduce((sum, c) => sum + (Number(c.opening_balance) || 0), 0);
+    const totalOutstandingCustomerBalances = Math.max(0, (invoicesAll.reduce((sum, i) => sum + (Number(i.net_total_amount ?? (i as any).total_amount ?? 0)), 0) + totalOpeningBalances) - paymentsAll.reduce((sum, p) => sum + (Number(p.amount_received) || 0), 0));
 
-    const totalWorkerAdvancesGiven = advances.reduce((sum, a) => sum + a.amount_paid, 0);
+    const totalWorkerAdvancesGiven = advances.reduce((sum, a) => sum + (Number(a.amount_paid) || 0), 0);
 
-    // Total Costs
-    const totalGeneralExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalMattiCost = matti.reduce((sum, m) => sum + m.total_amount, 0);
-    const totalFuelCost = fuel.reduce((sum, f) => sum + f.total_amount, 0);
-    const totalLaborCost = kacchi.reduce((sum, k) => sum + k.total_amount, 0) + bhatti.reduce((sum, b) => sum + b.total_amount, 0);
-    const totalAllExpenses = totalGeneralExpenses + totalMattiCost + totalFuelCost + totalLaborCost;
+    // Salary & Staff stats
+    const monthlyStaff = employeesAll.filter(e => e.status === 'Active' && e.salary_type === 'Monthly_Salary');
+    const totalStaffMonthlyBase = monthlyStaff.reduce((sum, e) => sum + (Number(e.monthly_salary_amount) || 0), 0);
+    const totalStaffSalaryPaid = staffSalariesAll.filter(s => s.status === 'Paid' && isDateInRange(s.payment_date)).reduce((sum, s) => sum + (Number(s.paid_amount || s.net_payable) || 0), 0);
+    const totalStaffSalaryRemaining = Math.max(0, totalStaffMonthlyBase - totalStaffSalaryPaid);
+
+    const totalLaborWages = kacchi.reduce((sum, k) => sum + (Number(k.total_amount) || 0), 0) + bhatti.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+    const totalLaborAdvances = advances.reduce((sum, a) => sum + (Number(a.amount_paid) || 0), 0);
+    const totalLaborRemaining = Math.max(0, totalLaborWages - totalLaborAdvances);
+
+    const totalSalariesPaid = totalStaffSalaryPaid + totalLaborAdvances;
+    const totalSalariesRemaining = totalStaffSalaryRemaining + totalLaborRemaining;
+
+    // Total Costs (Integrating General Expenses, Matti Trolley, Fuel, Labor Wages, and Staff Salaries)
+    const totalGeneralExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const totalMattiCost = matti.reduce((sum, m) => sum + (Number(m.total_amount) || 0), 0);
+    const totalFuelCost = fuel.reduce((sum, f) => sum + (Number(f.total_amount) || 0), 0);
+    const totalLaborCost = totalLaborWages;
+    const totalAllExpenses = totalGeneralExpenses + totalMattiCost + totalFuelCost + totalLaborCost + totalStaffSalaryPaid;
     const netProfitOrLoss = totalSalesRevenue - totalAllExpenses;
 
     const stockMap: Record<string, number> = {};
     stocks.forEach(s => {
-      stockMap[s.item_name] = s.current_stock;
+      stockMap[s.item_name] = Number(s.current_stock) || 0;
     });
 
     return {
@@ -988,6 +1260,10 @@ export const bhattaService = {
         totalPaymentsReceived,
         totalOutstandingCustomerBalances: Math.max(0, totalOutstandingCustomerBalances),
         totalWorkerAdvancesGiven,
+        totalStaffSalaryPaid,
+        totalStaffSalaryRemaining,
+        totalSalariesPaid,
+        totalSalariesRemaining,
         totalAllExpenses,
         netProfitOrLoss,
       },
@@ -999,5 +1275,35 @@ export const bhattaService = {
         kacchi: stockMap['Kacchi_Aent'] || 0,
       },
     };
+  },
+
+  // 12. Drivers & Vehicles
+  getDriversVehicles(): DriverVehicle[] {
+    return loadFromStorage('drivers_vehicles', SEED_DRIVERS_VEHICLES);
+  },
+  saveDriverVehicle(item: Partial<DriverVehicle>): DriverVehicle {
+    const list = this.getDriversVehicles();
+    if (item.id) {
+      const idx = list.findIndex(v => v.id === item.id);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...item } as DriverVehicle;
+        saveToStorage('drivers_vehicles', list);
+        return list[idx];
+      }
+    }
+    const newItem: DriverVehicle = {
+      id: Date.now(),
+      driver_name: item.driver_name || 'Driver',
+      vehicle_no: item.vehicle_no || 'Trolley',
+      vehicle_type: item.vehicle_type || 'Tractor Trolley',
+      phone: item.phone || '',
+    };
+    list.unshift(newItem);
+    saveToStorage('drivers_vehicles', list);
+    return newItem;
+  },
+  deleteDriverVehicle(id: number): void {
+    const list = this.getDriversVehicles().filter(v => v.id !== id);
+    saveToStorage('drivers_vehicles', list);
   },
 };

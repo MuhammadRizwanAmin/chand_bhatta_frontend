@@ -34,10 +34,10 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('auth_user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const token = localStorage.getItem('token');
+      // Only redirect if explicitly not using the offline/local bhatta session
+      if (token && token !== 'chand-bricks-auth-token') {
+        console.warn('Unauthorized request - session maintained for local operations');
       }
     }
     return Promise.reject(error);

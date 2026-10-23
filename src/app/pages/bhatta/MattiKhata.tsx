@@ -17,22 +17,21 @@ import {
   Save,
   Search,
 } from 'lucide-react';
+import { DateRangeFilter, DateRange, getInitialTodayRange, isWithinDateRange } from '../../components/DateRangeFilter';
 
 export function MattiKhata() {
   const [records, setRecords] = useState<MattiTrolleyRecord[]>(bhattaService.getMattiRecords());
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilterMode, setDateFilterMode] = useState<'All' | 'Today' | 'ThisWeek' | 'ThisMonth' | 'Custom'>('All');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>(getInitialTodayRange());
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({
     entry_date: new Date().toISOString().split('T')[0],
-    trolley_count: 5,
-    rate_per_trolley: 2500,
-    paid_amount: 12500,
+    trolley_count: 5 as number | string,
+    rate_per_trolley: 2500 as number | string,
+    paid_amount: 12500 as number | string,
     supplier_name: 'Akram Matti Supply',
     remarks: 'Good quality chikni matti',
   });
@@ -43,44 +42,6 @@ export function MattiKhata() {
 
   const refreshData = () => {
     setRecords(bhattaService.getMattiRecords());
-  };
-
-  const isWithinDateFilter = (dateStr: string) => {
-    if (dateFilterMode === 'All') return true;
-    if (!dateStr) return false;
-
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    if (dateFilterMode === 'Today') {
-      return dateStr === todayStr;
-    }
-
-    if (dateFilterMode === 'ThisWeek') {
-      const day = today.getDay();
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() + diffToMonday);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      const mondayStr = monday.toISOString().split('T')[0];
-      const sundayStr = sunday.toISOString().split('T')[0];
-      return dateStr >= mondayStr && dateStr <= sundayStr;
-    }
-
-    if (dateFilterMode === 'ThisMonth') {
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      return dateStr.startsWith(`${year}-${month}`);
-    }
-
-    if (dateFilterMode === 'Custom') {
-      if (customStartDate && dateStr < customStartDate) return false;
-      if (customEndDate && dateStr > customEndDate) return false;
-      return true;
-    }
-
-    return true;
   };
 
   const handleOpenAdd = () => {
@@ -114,18 +75,18 @@ export function MattiKhata() {
     if (editingId) {
       bhattaService.updateMattiRecord(editingId, {
         entry_date: form.entry_date,
-        trolley_count: Number(form.trolley_count),
-        rate_per_trolley: Number(form.rate_per_trolley),
-        paid_amount: Number(form.paid_amount),
+        trolley_count: Number(form.trolley_count) || 0,
+        rate_per_trolley: Number(form.rate_per_trolley) || 0,
+        paid_amount: Number(form.paid_amount) || 0,
         supplier_name: form.supplier_name,
         remarks: form.remarks,
       });
     } else {
       bhattaService.addMattiRecord({
         entry_date: form.entry_date,
-        trolley_count: Number(form.trolley_count),
-        rate_per_trolley: Number(form.rate_per_trolley),
-        paid_amount: Number(form.paid_amount),
+        trolley_count: Number(form.trolley_count) || 0,
+        rate_per_trolley: Number(form.rate_per_trolley) || 0,
+        paid_amount: Number(form.paid_amount) || 0,
         supplier_name: form.supplier_name,
         remarks: form.remarks,
       });
@@ -143,10 +104,8 @@ export function MattiKhata() {
 
   // Filtered records
   const filteredRecords = records.filter(rec => {
-    const matchesSearch = !searchTerm ||
-      rec.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (rec.remarks || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate = isWithinDateFilter(rec.entry_date);
+    const matchesSearch = !searchTerm || rec.supplier_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = isWithinDateRange(rec.entry_date, dateRange);
     return matchesSearch && matchesDate;
   });
 
@@ -158,8 +117,8 @@ export function MattiKhata() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header with DateRangeFilter on Right */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
             <Truck className="text-[#1D4ED8]" />
@@ -170,13 +129,10 @@ export function MattiKhata() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <PlusCircle size={16} />
-          Add Matti Trolley (نئی ٹرالی درج کریں)
-        </button>
+        {/* Global Date Filter Only */}
+        <div className="shrink-0 max-w-full">
+          <DateRangeFilter defaultOption="this_month" onChange={setDateRange} />
+        </div>
       </div>
 
       {/* 4 Amount-Relevant KPI Summary Cards */}
@@ -238,60 +194,31 @@ export function MattiKhata() {
         </div>
       </div>
 
-      {/* Filter Bar with Search & Period Filter Dropdown */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 w-full">
-          {/* Search box */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-            <input
-              type="text"
-              placeholder="Search supplier or remarks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-9 pr-3 py-1.5 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8]"
-            />
-          </div>
-
-          {/* Period Filter Dropdown (Today, This Week, This Month, Custom Range) */}
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-[#64748B]" />
-            <select
-              value={dateFilterMode}
-              onChange={(e) => setDateFilterMode(e.target.value as any)}
-              className="bg-white border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
-            >
-              <option value="All">All Time (تمام ریکارڈز)</option>
-              <option value="Today">Today (آج کا کھاتہ)</option>
-              <option value="ThisWeek">This Week (اس ہفتے کا کھاتہ)</option>
-              <option value="ThisMonth">This Month (اس مہینے کا کھاتہ)</option>
-              <option value="Custom">Custom Range (مخصوص تاریخ منتخب کریں)</option>
-            </select>
-          </div>
-
-          {/* Custom Date Range Inputs */}
-          {dateFilterMode === 'Custom' && (
-            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-1 text-xs">
-              <span className="text-slate-500 text-[11px]">From:</span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-              <span className="text-slate-500 text-[11px]">To:</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-transparent text-[#0F172A] font-mono text-xs focus:outline-none"
-              />
-            </div>
-          )}
+      {/* Search Row with Add Matti Trolley Button on Right */}
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-sm">
+        {/* Search box */}
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <input
+            type="text"
+            placeholder="Search supplier..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-9 pr-3 py-2 text-xs text-[#0F172A] placeholder-slate-400 focus:outline-none focus:border-[#1D4ED8]"
+          />
         </div>
+
+        {/* Add Matti Trolley Button */}
+        <button
+          onClick={handleOpenAdd}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer whitespace-nowrap self-stretch sm:self-auto justify-center"
+        >
+          <PlusCircle size={16} />
+          <span>Add Matti Trolley (نئی ٹرالی درج کریں)</span>
+        </button>
       </div>
 
-      {/* Matti Deliveries Table */}
+      {/* Matti Deliveries Table (Remarks Column Removed) */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm">
         <div className="p-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -314,14 +241,13 @@ export function MattiKhata() {
                 <th className="py-3 px-4 text-right">Total Amount (رقم)</th>
                 <th className="py-3 px-4 text-right font-bold text-emerald-700">Paid Amount (ادا)</th>
                 <th className="py-3 px-4 text-right font-bold text-rose-600">Balance (بقایا)</th>
-                <th className="py-3 px-4">Remarks</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0] text-[#0F172A]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-[#64748B]">
+                  <td colSpan={8} className="py-8 text-center text-[#64748B]">
                     No matti trolley deliveries found for this selection.
                   </td>
                 </tr>
@@ -351,9 +277,6 @@ export function MattiKhata() {
                       </td>
                       <td className="py-3 px-4 text-right font-mono font-black text-rose-600">
                         Rs. {balance.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-[#475569] max-w-xs truncate">
-                        {rec.remarks || '-'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -433,14 +356,16 @@ export function MattiKhata() {
                     Trolley Count (تعداد ٹرالی) *
                   </label>
                   <input
-                    type="number"
-                    min="1"
+                    type="text"
+                    inputMode="numeric"
                     required
+                    placeholder="e.g. 5"
                     value={form.trolley_count}
                     onChange={(e) => {
-                      const count = Number(e.target.value);
-                      const total = count * form.rate_per_trolley;
-                      setForm({ ...form, trolley_count: count, paid_amount: total });
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      const count = Number(val) || 0;
+                      const rate = Number(form.rate_per_trolley) || 0;
+                      setForm({ ...form, trolley_count: val, paid_amount: count * rate });
                     }}
                     className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
@@ -450,15 +375,16 @@ export function MattiKhata() {
                     Rate / Trolley (ریٹ فی ٹرالی) *
                   </label>
                   <input
-                    type="number"
-                    min="100"
-                    step="50"
+                    type="text"
+                    inputMode="decimal"
                     required
+                    placeholder="e.g. 2500"
                     value={form.rate_per_trolley}
                     onChange={(e) => {
-                      const rate = Number(e.target.value);
-                      const total = form.trolley_count * rate;
-                      setForm({ ...form, rate_per_trolley: rate, paid_amount: total });
+                      const val = e.target.value.replace(/[^0-9.]/g, '');
+                      const rate = Number(val) || 0;
+                      const count = Number(form.trolley_count) || 0;
+                      setForm({ ...form, rate_per_trolley: val, paid_amount: count * rate });
                     }}
                     className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                   />
@@ -470,11 +396,15 @@ export function MattiKhata() {
                   Paid Amount (ادا شدہ رقم - Rs.) *
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   required
+                  placeholder="e.g. 12500"
                   value={form.paid_amount}
-                  onChange={(e) => setForm({ ...form, paid_amount: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    setForm({ ...form, paid_amount: val });
+                  }}
                   className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3 py-2 text-xs text-[#0F172A] font-mono focus:outline-none focus:border-[#1D4ED8]"
                 />
               </div>

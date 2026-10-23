@@ -2,44 +2,72 @@
 @import './tailwind.css';
 @import './theme.css';
 
-/* ==========================================================================
-   Global Jameel Noori Nastaliq Typography
-   Apply to all HTML elements, forms, inputs, tables, buttons, headings
-   ========================================================================== */
-*,
-*::before,
-*::after,
-html,
-body,
-form,
-input,
-button,
-select,
-textarea,
-table,
-thead,
-tbody,
-tr,
-th,
-td,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-span,
-a,
-label,
-div {
-  font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq', 'JameelNooriNastaliq', 'Noto Nastaliq Urdu', 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
-}
+/* Shared screen typography: English UI font with an Urdu fallback. */
+@media screen {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+      'Jameel Noori Nastaliq', 'Noto Sans Arabic', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-/* Ensure Urdu headings & text maintain proper line-height for Nastaliq */
-h1, h2, h3, h4, h5, h6, .font-urdu, [lang="ur"] {
-  line-height: 1.8;
-  overflow: visible;
+  button, input, select, textarea { font-family: inherit; }
+
+  /* Globally hide increment and decrement spinner arrows on all number inputs */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+  }
+
+  /* Raise tiny UI labels while preserving the spacing of compact controls. */
+  #root .text-xs { font-size: 13px; line-height: 1.5; }
+  #root .text-\[9px\],
+  #root .text-\[10px\] { font-size: 11px; line-height: 1.5; }
+  #root .text-\[11px\] { font-size: 12px; line-height: 1.5; }
+
+  #root .font-bold,
+  #root .font-extrabold { font-weight: 600; }
+  #root .font-black { font-weight: 700; }
+
+  #root main h1 {
+    font-size: clamp(24px, 2vw, 28px);
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+  }
+  #root main h2 { font-weight: 600; line-height: 1.4; }
+  #root table { font-size: 13px; line-height: 1.55; }
+  #root th { font-weight: 600; letter-spacing: 0.01em; }
+
+  /* Keep money and dates aligned without a heavier monospace typeface. */
+  #root .font-mono {
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+  #root input::placeholder,
+  #root textarea::placeholder { font-weight: 400; }
+
+  /* Preserve Nastaliq and the extra line spacing needed for Urdu. */
+  body.lang-ur,
+  #root .font-urdu,
+  #root [lang="ur"] {
+    font-family: 'Jameel Noori Nastaliq', 'Jameel Noori Nastaleeq',
+      'JameelNooriNastaliq', 'Noto Nastaliq Urdu', 'Inter', sans-serif;
+    line-height: 1.85;
+  }
+  html[lang="ur"] #root main :is(h1, h2),
+  html[lang="ur"] #root :is(.text-xs, .text-\[9px\], .text-\[10px\], .text-\[11px\], table) {
+    line-height: 1.85;
+    letter-spacing: normal;
+  }
 }
 
 /* ==========================================================================
