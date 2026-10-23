@@ -22,8 +22,10 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function MattiFuelKhata() {
+  const { isUrdu } = useLanguage();
   const [activeTab, setActiveTab] = useState<'matti' | 'fuel'>('matti');
   const [mattiRecords, setMattiRecords] = useState<MattiTrolleyRecord[]>(bhattaService.getMattiRecords());
   const [fuelRecords, setFuelRecords] = useState<FuelMasalaExpense[]>(bhattaService.getFuelRecords());

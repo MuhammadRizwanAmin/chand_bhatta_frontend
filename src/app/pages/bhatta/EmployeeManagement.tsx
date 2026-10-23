@@ -34,8 +34,10 @@ import {
   Scale,
 } from 'lucide-react';
 import chandLogo from '../../../assets/chand_bricks_logo.jpg';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function EmployeeManagement() {
+  const { isUrdu } = useLanguage();
   const { settings } = useBhattaSettings();
   const salarySlipRef = useRef<HTMLDivElement>(null);
   const [dateRange, setDateRange] = useState<DateRange>(getInitialTodayRange());

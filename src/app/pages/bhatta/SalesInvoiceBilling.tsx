@@ -34,8 +34,10 @@ import autoTable from 'jspdf-autotable';
 import api from '../../services/api';
 import { BhattaInvoiceModal } from '../../components/BhattaInvoiceModal';
 import { DateRangeFilter, DateRange, getInitialTodayRange, isWithinDateRange } from '../../components/DateRangeFilter';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function SalesInvoiceBilling() {
+  const { isUrdu } = useLanguage();
   const [invoices, setInvoices] = useState<SalesInvoice[]>(() => bhattaService.getInvoices());
   const [customers, setCustomers] = useState<Customer[]>(() => bhattaService.getCustomers());
   const [driversVehicles, setDriversVehicles] = useState<DriverVehicle[]>(() => bhattaService.getDriversVehicles());
