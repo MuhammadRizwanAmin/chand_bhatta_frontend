@@ -285,10 +285,10 @@ export function PakkiBhattiLaborKhata() {
     <div className="space-y-6">
       
       {/* Top Header & Global Date Filter (Top-Bar Positioned) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-            <Flame className="text-[#1D4ED8]" size={24} />
+            <Flame className="text-[#1D4ED8] shrink-0" size={24} />
             <span>{isUrdu ? 'پکی اینٹ و ٹائل بھٹی کھاتہ' : 'Pakki Aent & Tile Bhatti Khata'}</span>
           </h1>
           <p className="text-xs text-[#64748B] mt-0.5">
@@ -297,12 +297,10 @@ export function PakkiBhattiLaborKhata() {
         </div>
 
         {/* Global Date Filter */}
-        <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <div className="shrink-0 max-w-full">
             <DateRangeFilter defaultOption="this_month" onChange={handleDateFilterChange} />
           </div>
-
-
         </div>
       </div>
 
@@ -387,42 +385,42 @@ export function PakkiBhattiLaborKhata() {
       </div>
 
       {/* FILTER & ACTIONS ROW */}
-      <div className="bg-white rounded-xl shadow-xs p-4 border border-[#E2E8F0] flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Work Type Tabs (Bhari / Nikasi / All) */}
-        <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
-          <button
-            onClick={() => setActiveTab('All')}
-            className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
-              activeTab === 'All' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600'
-            }`}
-          >
-            {isUrdu ? 'تمام کھاتہ' : 'All Pakki'}
-          </button>
-          <button
-            onClick={() => setActiveTab('Bhari')}
-            className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
-              activeTab === 'Bhari' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600'
-            }`}
-          >
-            {isUrdu ? 'بھرائی (لوڈنگ)' : 'Bhari (Loading)'}
-          </button>
-          <button
-            onClick={() => setActiveTab('Nikasi')}
-            className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
-              activeTab === 'Nikasi' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
-            }`}
-          >
-            {isUrdu ? 'نکلوائی (برآمد)' : 'Nikasi (Unloading)'}
-          </button>
-        </div>
+      <div className="bg-white rounded-xl shadow-xs p-3.5 sm:p-4 border border-[#E2E8F0] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        {/* Left: Work Type Tabs & Filters */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Work Type Tabs (Bhari / Nikasi / All) */}
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
+            <button
+              onClick={() => setActiveTab('All')}
+              className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'All' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              {isUrdu ? 'تمام کھاتہ' : 'All Pakki'}
+            </button>
+            <button
+              onClick={() => setActiveTab('Bhari')}
+              className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'Bhari' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              {isUrdu ? 'بھرائی (لوڈنگ)' : 'Bhari (Loading)'}
+            </button>
+            <button
+              onClick={() => setActiveTab('Nikasi')}
+              className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'Nikasi' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
+              }`}
+            >
+              {isUrdu ? 'نکلوائی (برآمد)' : 'Nikasi (Unloading)'}
+            </button>
+          </div>
 
-        {/* Center: Category & Status toggles */}
-        <div className="flex flex-wrap items-center gap-2">
           {/* Category Filter */}
-          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
             <button
               onClick={() => setCategoryFilter('All')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 categoryFilter === 'All' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -430,7 +428,7 @@ export function PakkiBhattiLaborKhata() {
             </button>
             <button
               onClick={() => setCategoryFilter('Pakki_Aent')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 categoryFilter === 'Pakki_Aent' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -438,7 +436,7 @@ export function PakkiBhattiLaborKhata() {
             </button>
             <button
               onClick={() => setCategoryFilter('Tile')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 categoryFilter === 'Tile' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -447,10 +445,10 @@ export function PakkiBhattiLaborKhata() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
             <button
               onClick={() => setStatusFilter('All')}
-              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 statusFilter === 'All' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -458,7 +456,7 @@ export function PakkiBhattiLaborKhata() {
             </button>
             <button
               onClick={() => setStatusFilter('Paid')}
-              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Paid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -466,7 +464,7 @@ export function PakkiBhattiLaborKhata() {
             </button>
             <button
               onClick={() => setStatusFilter('Unpaid')}
-              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Unpaid' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -476,35 +474,34 @@ export function PakkiBhattiLaborKhata() {
         </div>
 
         {/* Right: Search & Add Entries */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 justify-between xl:justify-end">
+          <div className="relative flex-1 sm:flex-initial">
             <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
             <input
               type="text"
               placeholder={isUrdu ? 'تلاش کریں...' : 'Search...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#0F172A] w-36 focus:w-48 transition-all focus:outline-none focus:border-[#1D4ED8]"
+              className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#0F172A] w-full sm:w-36 sm:focus:w-48 transition-all focus:outline-none focus:border-[#1D4ED8]"
             />
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               onClick={() => handleOpenAdd('Bhari')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
-              <ArrowDownToLine size={14} />
+              <ArrowDownToLine size={14} className="shrink-0" />
               <span>+ {isUrdu ? 'بھرائی اندراج' : 'Add Bhari'}</span>
             </button>
 
             <button
               onClick={() => handleOpenAdd('Nikasi')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
-              <ArrowUpFromLine size={14} />
+              <ArrowUpFromLine size={14} className="shrink-0" />
               <span>+ {isUrdu ? 'نکلوائی اندراج' : 'Add Nikasi'}</span>
             </button>
           </div>
-
         </div>
       </div>
 

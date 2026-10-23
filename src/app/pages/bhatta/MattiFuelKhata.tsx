@@ -333,43 +333,43 @@ export function MattiFuelKhata() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="bg-[#F1F5F9] p-1 rounded-xl border border-[#CBD5E1] flex items-center">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="bg-[#F1F5F9] p-1 rounded-xl border border-[#CBD5E1] flex items-center shrink-0">
             <button
               onClick={() => setActiveTab('matti')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'matti' ? 'bg-[#1D4ED8] text-white shadow-xs' : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
-              <Truck size={14} />
-              Matti Trolley Khata
+              <Truck size={14} className="shrink-0" />
+              <span>{isUrdu ? 'مٹی ٹرالی کھاتہ' : 'Matti Trolley Khata'}</span>
             </button>
             <button
               onClick={() => setActiveTab('fuel')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'fuel' ? 'bg-[#1D4ED8] text-white shadow-xs' : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
-              <Flame size={14} />
-              Fuel & Masala Khata
+              <Flame size={14} className="shrink-0" />
+              <span>{isUrdu ? 'ایندھن و مصالحہ کھاتہ' : 'Fuel & Masala Khata'}</span>
             </button>
           </div>
 
           {activeTab === 'matti' ? (
             <button
               onClick={handleOpenAddMatti}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
-              <PlusCircle size={16} />
-              Add Matti Trolley
+              <PlusCircle size={15} className="shrink-0" />
+              <span>{isUrdu ? '+ نئی ٹرالی درج کریں' : '+ Add Matti Trolley'}</span>
             </button>
           ) : (
             <button
               onClick={handleOpenAddFuel}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
-              <PlusCircle size={16} />
-              Add Fuel Purchase
+              <PlusCircle size={15} className="shrink-0" />
+              <span>{isUrdu ? '+ ایندھن خریداری درج کریں' : '+ Add Fuel Purchase'}</span>
             </button>
           )}
         </div>

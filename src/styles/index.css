@@ -27,6 +27,14 @@
     appearance: textfield !important;
   }
 
+  /* Stabilize all buttons: compact line-height and prevent text wrapping overflow */
+  #root button {
+    line-height: 1.25 !important;
+  }
+  #root button :is(span, svg) {
+    flex-shrink: 0;
+  }
+
   /* Raise tiny UI labels while preserving the spacing of compact controls. */
   #root .text-xs { font-size: 13px; line-height: 1.5; }
   #root .text-\[9px\],

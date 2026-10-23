@@ -229,10 +229,10 @@ export function KacchiProductionKhata() {
     <div className="space-y-6">
       
       {/* Top Header & Global Date Filter (Top-Bar Positioned) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-            <Layers className="text-[#1D4ED8]" size={24} />
+            <Layers className="text-[#1D4ED8] shrink-0" size={24} />
             <span>{isUrdu ? 'کچی اینٹ و ٹائل پتھائی کھاتہ' : 'Kacchi Aent & Tile Production Khata'}</span>
           </h1>
           <p className="text-xs text-[#64748B] mt-0.5">
@@ -241,12 +241,10 @@ export function KacchiProductionKhata() {
         </div>
 
         {/* Global Date Filter */}
-        <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <div className="shrink-0 max-w-full">
             <DateRangeFilter defaultOption="this_month" onChange={handleDateFilterChange} />
           </div>
-
-
         </div>
       </div>
 
@@ -331,26 +329,26 @@ export function KacchiProductionKhata() {
       </div>
 
       {/* FILTER & ACTIONS ROW */}
-      <div className="bg-white rounded-xl shadow-xs p-4 border border-[#E2E8F0] flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Left: Search input */}
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder={isUrdu ? 'پتھیر یا مزدور کا نام تلاش کریں...' : 'Search worker name...'}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
-          />
-        </div>
+      <div className="bg-white rounded-xl shadow-xs p-3.5 sm:p-4 border border-[#E2E8F0] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        {/* Left: Search & Category/Status Filters */}
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          {/* Search input */}
+          <div className="relative w-full sm:w-64">
+            <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder={isUrdu ? 'پتھیر یا مزدور کا نام تلاش کریں...' : 'Search worker name...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1D4ED8]"
+            />
+          </div>
 
-        {/* Center: Category & Status toggles */}
-        <div className="flex flex-wrap items-center gap-2">
           {/* Category Filter */}
-          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
             <button
               onClick={() => setCategoryFilter('All')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 categoryFilter === 'All' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -358,7 +356,7 @@ export function KacchiProductionKhata() {
             </button>
             <button
               onClick={() => setCategoryFilter('Kacchi_Aent')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 categoryFilter === 'Kacchi_Aent' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -366,7 +364,7 @@ export function KacchiProductionKhata() {
             </button>
             <button
               onClick={() => setCategoryFilter('Tile')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 categoryFilter === 'Tile' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -375,10 +373,10 @@ export function KacchiProductionKhata() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs shrink-0">
             <button
               onClick={() => setStatusFilter('All')}
-              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 statusFilter === 'All' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -386,7 +384,7 @@ export function KacchiProductionKhata() {
             </button>
             <button
               onClick={() => setStatusFilter('Paid')}
-              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Paid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -394,7 +392,7 @@ export function KacchiProductionKhata() {
             </button>
             <button
               onClick={() => setStatusFilter('Unpaid')}
-              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Unpaid' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -404,13 +402,13 @@ export function KacchiProductionKhata() {
         </div>
 
         {/* Right: Add Pathai Entry */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 self-end xl:self-auto">
           <button
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
+            className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
           >
-            <PlusCircle size={15} />
-            <span>{isUrdu ? 'نیا اندراج (پتھائی)' : 'Add Pathai Entry'}</span>
+            <PlusCircle size={15} className="shrink-0" />
+            <span>{isUrdu ? '+ نیا اندراج (پتھائی)' : '+ Add Pathai Entry'}</span>
           </button>
         </div>
       </div>

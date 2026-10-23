@@ -253,20 +253,20 @@ export function DateRangeFilter({ onChange, darkMode = false, defaultLabel, vari
     );
   }
 
-  // 2. Uniform Button Group Variant (Strictly single horizontal row with inline custom inputs)
+  // 2. Uniform Button Group Variant (Responsive wrap with inline custom inputs)
   return (
-    <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 max-w-full">
+    <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap py-0.5 max-w-full">
       {/* 1. Today */}
       <button
         type="button"
         onClick={() => handleSelectOption('today')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer ${
+        className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer whitespace-nowrap ${
           selectedOption === 'today'
             ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs ring-2 ring-blue-200'
             : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
         }`}
       >
-        <CalendarIcon size={13} />
+        <CalendarIcon size={13} className="shrink-0" />
         <span>{isUrdu ? 'آج (Today)' : 'Today'}</span>
       </button>
 
@@ -274,13 +274,13 @@ export function DateRangeFilter({ onChange, darkMode = false, defaultLabel, vari
       <button
         type="button"
         onClick={() => handleSelectOption('this_week')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer ${
+        className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer whitespace-nowrap ${
           selectedOption === 'this_week'
             ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs ring-2 ring-blue-200'
             : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
         }`}
       >
-        <CalendarIcon size={13} />
+        <CalendarIcon size={13} className="shrink-0" />
         <span>{isUrdu ? 'اس ہفتے (This Week)' : 'This Week'}</span>
       </button>
 
@@ -288,13 +288,13 @@ export function DateRangeFilter({ onChange, darkMode = false, defaultLabel, vari
       <button
         type="button"
         onClick={() => handleSelectOption('this_month')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer ${
+        className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer whitespace-nowrap ${
           selectedOption === 'this_month'
             ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs ring-2 ring-blue-200'
             : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
         }`}
       >
-        <CalendarIcon size={13} />
+        <CalendarIcon size={13} className="shrink-0" />
         <span>{isUrdu ? 'اس مہینے (This Month)' : 'This Month'}</span>
       </button>
 
@@ -302,19 +302,19 @@ export function DateRangeFilter({ onChange, darkMode = false, defaultLabel, vari
       <button
         type="button"
         onClick={() => setSelectedOption('custom')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer ${
+        className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 cursor-pointer whitespace-nowrap ${
           selectedOption === 'custom'
             ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs ring-2 ring-blue-200'
             : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
         }`}
       >
-        <Filter size={13} />
-        <span>{isUrdu ? 'اپنی مرضی (Custom Range)' : 'Custom Range'}</span>
+        <Filter size={13} className="shrink-0" />
+        <span>{isUrdu ? 'اپنی مرضی (Custom)' : 'Custom Range'}</span>
       </button>
 
-      {/* Inline Start Date & End Date Inputs strictly in the SAME ROW */}
+      {/* Inline Start Date & End Date Inputs */}
       {selectedOption === 'custom' && (
-        <div className="flex items-center gap-1.5 flex-nowrap shrink-0 bg-slate-50 border border-slate-300 px-2.5 py-1 rounded-lg shadow-xs">
+        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 bg-slate-50 border border-slate-300 px-2 sm:px-2.5 py-1 rounded-lg shadow-xs">
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-[11px] font-bold text-slate-600 font-urdu">{isUrdu ? 'شروع:' : 'From:'}</span>
             <input
@@ -336,7 +336,7 @@ export function DateRangeFilter({ onChange, darkMode = false, defaultLabel, vari
           <button
             type="button"
             onClick={handleCustomApply}
-            className="px-3 py-1 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded text-xs font-bold transition-colors shrink-0 cursor-pointer shadow-xs"
+            className="px-3 py-1 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded text-xs font-bold transition-colors shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
           >
             {isUrdu ? 'لاگو کریں' : 'Apply'}
           </button>

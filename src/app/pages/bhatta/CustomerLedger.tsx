@@ -366,10 +366,10 @@ export function CustomerLedger() {
     <div className="space-y-6">
       
       {/* Top Header & Global Date Filter (Top-Bar Positioned) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-            <Users className="text-[#1D4ED8]" size={24} />
+            <Users className="text-[#1D4ED8] shrink-0" size={24} />
             <span>{isUrdu ? 'گاہک کھاتہ (Customer Ledger)' : 'Customer Ledger'}</span>
           </h1>
           <p className="text-xs text-[#64748B] mt-0.5">
@@ -378,12 +378,10 @@ export function CustomerLedger() {
         </div>
 
         {/* Global Date Filter */}
-        <div className="flex items-center gap-2.5 flex-wrap xl:flex-nowrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <div className="shrink-0 max-w-full">
             <DateRangeFilter onChange={handleDateFilterChange} />
           </div>
-
-
         </div>
       </div>
 
@@ -448,25 +446,25 @@ export function CustomerLedger() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleDownloadCustomersListPDF}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 bg-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:border-slate-300 text-slate-700 bg-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
           >
-            <Download size={14} className="text-[#1D4ED8]" />
+            <Download size={14} className="text-[#1D4ED8] shrink-0" />
             <span>PDF</span>
           </button>
-            <button
-              onClick={() => handleOpenPayment()}
-              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
-            >
-              <Coins size={15} />
-              <span>{isUrdu ? 'وصولی اندراج' : 'Receive Cash'}</span>
-            </button>
-            <button
-              onClick={handleOpenAddCustomer}
-              className="flex items-center gap-2 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
-            >
-              <UserPlus size={15} />
-              <span>{isUrdu ? 'نیا گاہک' : 'Add Customer'}</span>
-            </button>
+          <button
+            onClick={() => handleOpenPayment()}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
+          >
+            <Coins size={15} className="shrink-0" />
+            <span>{isUrdu ? '+ وصولی اندراج' : '+ Receive Cash'}</span>
+          </button>
+          <button
+            onClick={handleOpenAddCustomer}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
+          >
+            <UserPlus size={15} className="shrink-0" />
+            <span>{isUrdu ? '+ نیا گاہک' : '+ Add Customer'}</span>
+          </button>
         </div>
       </div>
 

@@ -338,20 +338,20 @@ export function EmployeeManagement() {
               <button
                 type="button"
                 onClick={handleOpenAdd}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
               >
-                <UserPlus size={16} />
-                <span>Add Worker (نیا مزدور درج کریں)</span>
+                <UserPlus size={16} className="shrink-0" />
+                <span>{isUrdu ? '+ نیا مزدور درج کریں' : '+ Add Worker'}</span>
               </button>
             )}
             {activeTab === 'attendance' && (
               <button
                 type="button"
                 onClick={handleMarkAllPresent}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
               >
-                <CheckCircle size={15} />
-                <span>Mark All Active Present (سب حاضر کریں)</span>
+                <CheckCircle size={15} className="shrink-0" />
+                <span>{isUrdu ? 'سب حاضر کریں' : 'Mark All Present'}</span>
               </button>
             )}
           </div>
