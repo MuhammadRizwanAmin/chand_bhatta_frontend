@@ -62,49 +62,59 @@ export function BhattaDashboard() {
     };
   }, [dateRange, loadRealtimeData]);
 
-  // Stock overview
-  const stockItems = [
+  // Real-time Production Overview items (Kacchi Bricks, Kacchi Tiles, Pakki Bricks, Pakki Tiles)
+  const productionItems = [
     { 
-      label: isUrdu ? 'اول اینٹ (نمبر 1)' : 'Aent Aval (First)', 
-      key: 'aval', 
-      count: stats.stocks.aval, 
+      label: isUrdu ? 'کچی اینٹ پیداوار' : 'Kacchi Bricks', 
+      key: 'kacchiAent', 
+      count: Number((stats.todayProduction as any).kacchiAent) || 0,
+      allTime: Number((stats.todayProduction as any).allTimeKacchiAent) || 0,
+      link: '/bhatta/kacchi',
+      unit: isUrdu ? 'کچی اینٹیں تیار' : 'Bricks Produced',
       color: 'from-blue-600 to-indigo-600', 
-      badge: 'bg-blue-50 text-blue-700 border-blue-200' 
+      cardBg: 'bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-blue-100/40 border-blue-200/80 hover:border-blue-400',
+      badge: 'bg-blue-100/80 text-blue-800 border-blue-300',
+      textColor: 'text-blue-950',
+      dotColor: 'bg-blue-600',
     },
     { 
-      label: isUrdu ? 'دوئم اینٹ (نمبر 2)' : 'Aent Doem (Second)', 
-      key: 'doem', 
-      count: stats.stocks.doem, 
-      color: 'from-emerald-500 to-teal-600', 
-      badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-    },
-    { 
-      label: isUrdu ? 'سوئم اینٹ (نمبر 3)' : 'Aent Soyem (Third)', 
-      key: 'soyem', 
-      count: stats.stocks.soyem, 
-      color: 'from-amber-500 to-yellow-600', 
-      badge: 'bg-amber-50 text-amber-700 border-amber-200' 
-    },
-    { 
-      label: isUrdu ? 'پکی ٹائل (چھت و فرش)' : 'Pakki Tiles (Baked)', 
-      key: 'tile', 
-      count: stats.stocks.tile, 
-      color: 'from-purple-500 to-indigo-600', 
-      badge: 'bg-purple-50 text-purple-700 border-purple-200' 
-    },
-    { 
-      label: isUrdu ? 'کچی اینٹ (زمین پر)' : 'Kacchi Bricks', 
-      key: 'kacchi', 
-      count: stats.stocks.kacchi, 
-      color: 'from-slate-500 to-gray-600', 
-      badge: 'bg-slate-100 text-slate-700 border-slate-300' 
-    },
-    { 
-      label: isUrdu ? 'کچی ٹائل (زمین پر)' : 'Kacchi Tiles', 
+      label: isUrdu ? 'کچی ٹائل پیداوار' : 'Kacchi Tiles', 
       key: 'kacchiTile', 
-      count: (stats.stocks as any).kacchiTile || 35000, 
-      color: 'from-orange-500 to-amber-600', 
-      badge: 'bg-orange-50 text-orange-700 border-orange-200' 
+      count: Number((stats.todayProduction as any).kacchiTile) || 0,
+      allTime: Number((stats.todayProduction as any).allTimeKacchiTile) || 0,
+      link: '/bhatta/kacchi',
+      unit: isUrdu ? 'کچی ٹائلیں تیار' : 'Tiles Produced',
+      color: 'from-amber-500 to-orange-600', 
+      cardBg: 'bg-gradient-to-br from-amber-50/70 via-orange-50/30 to-amber-100/40 border-amber-200/80 hover:border-amber-400',
+      badge: 'bg-amber-100/80 text-amber-900 border-amber-300',
+      textColor: 'text-amber-950',
+      dotColor: 'bg-amber-600',
+    },
+    { 
+      label: isUrdu ? 'پکی اینٹ پیداوار' : 'Pakki Bricks', 
+      key: 'pakkiAent', 
+      count: Number((stats.todayProduction as any).pakkiAent) || 0,
+      allTime: Number((stats.todayProduction as any).allTimePakkiAent) || 0,
+      link: '/bhatta/nikasi',
+      unit: isUrdu ? 'پکی اینٹیں نکاسی' : 'Bricks (Baked)',
+      color: 'from-emerald-600 to-teal-700', 
+      cardBg: 'bg-gradient-to-br from-emerald-50/70 via-teal-50/30 to-emerald-100/40 border-emerald-200/80 hover:border-emerald-400',
+      badge: 'bg-emerald-100/80 text-emerald-900 border-emerald-300',
+      textColor: 'text-emerald-950',
+      dotColor: 'bg-emerald-600',
+    },
+    { 
+      label: isUrdu ? 'پکی ٹائل پیداوار' : 'Pakki Tiles', 
+      key: 'pakkiTile', 
+      count: Number((stats.todayProduction as any).pakkiTile) || 0,
+      allTime: Number((stats.todayProduction as any).allTimePakkiTile) || 0,
+      link: '/bhatta/nikasi',
+      unit: isUrdu ? 'پکی ٹائلیں نکاسی' : 'Tiles (Baked)',
+      color: 'from-purple-600 to-indigo-700', 
+      cardBg: 'bg-gradient-to-br from-purple-50/70 via-indigo-50/30 to-purple-100/40 border-purple-200/80 hover:border-purple-400',
+      badge: 'bg-purple-100/80 text-purple-900 border-purple-300',
+      textColor: 'text-purple-950',
+      dotColor: 'bg-purple-600',
     },
   ];
 
@@ -272,16 +282,16 @@ export function BhattaDashboard() {
 
       </div>
 
-      {/* QUICK STOCK INDICATORS (Aval, Doem, Soyem, Tiles, Kacchi) */}
+      {/* REAL-TIME PRODUCTION INDICATORS (Kacchi Bricks, Kacchi Tiles, Pakki Bricks, Pakki Tiles) */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
           <div>
             <h3 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
-              <Package size={18} className="text-[#1D4ED8]" />
-              <span>{isUrdu ? 'بھٹہ تیار مال و اسٹاک پوزیشن' : 'Bhatta Ready Stock & Inventory Indicators'}</span>
+              <Layers size={18} className="text-[#1D4ED8]" />
+              <span>{isUrdu ? 'بھٹہ لائیو پیداواری تفصیلات (کچی و پکی مال)' : 'Bhatta Live Production Breakdown (Kacchi & Pakki)'}</span>
             </h3>
-            <p className="text-xs text-[#64748B]">
-              {isUrdu ? 'کچی اینٹ، پکی اینٹ (اول، دوئم، سوئم) اور ٹائل کا لائیو اسٹاک ریکارڈ' : 'Live stock across raw bricks, baked grades (Aval, Doem, Soyem), and Tiles'}
+            <p className="text-xs text-[#64748B] mt-0.5">
+              {isUrdu ? 'کچی اینٹ، کچی ٹائل، پکی اینٹ اور پکی ٹائل کا ریئل ٹائم پیداواری ریکارڈ' : 'Real-time production record of Kacchi Bricks, Kacchi Tiles, Pakki Bricks, and Pakki Tiles'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -289,49 +299,56 @@ export function BhattaDashboard() {
               to="/bhatta/kacchi"
               className="text-xs text-[#1D4ED8] hover:underline font-semibold inline-flex items-center gap-1"
             >
-              {isUrdu ? 'کچی اینٹ کھاتہ &rarr;' : 'Kacchi Stock &rarr;'}
+              {isUrdu ? 'کچی اینٹ کھاتہ &rarr;' : 'Kacchi Production &rarr;'}
             </Link>
             <span className="text-slate-300">|</span>
             <Link
               to="/bhatta/nikasi"
               className="text-xs text-[#1D4ED8] hover:underline font-semibold inline-flex items-center gap-1"
             >
-              {isUrdu ? 'پکی اینٹ کھاتہ &rarr;' : 'Pakki Stock &rarr;'}
+              {isUrdu ? 'پکی اینٹ نکاسی کھاتہ &rarr;' : 'Pakki Production &rarr;'}
             </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-          {stockItems.map(item => (
-            <div
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          {productionItems.map(item => (
+            <Link
               key={item.key}
-              className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
-                item.key === 'aval' ? 'bg-amber-50/40 border-amber-200 hover:border-amber-400' :
-                item.key === 'doem' ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' :
-                item.key === 'soyem' ? 'bg-blue-50/40 border-blue-200 hover:border-blue-400' :
-                item.key === 'tile' ? 'bg-purple-50/40 border-purple-200 hover:border-purple-400' :
-                item.key === 'kacchiTile' ? 'bg-orange-50/40 border-orange-200 hover:border-orange-400' :
-                'bg-slate-50/70 border-slate-300 hover:border-slate-400'
-              }`}
+              to={item.link}
+              className={`p-4 rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer group ${item.cardBg}`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${item.badge} leading-normal`}>
-                  {item.label}
-                </span>
-              </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-[#0F172A] font-mono">
-                  {item.count.toLocaleString()}
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${item.badge} flex items-center gap-1.5`}>
+                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${item.dotColor}`} />
+                    {item.label}
+                  </span>
+                  <ArrowRight size={13} className="text-slate-400 group-hover:text-slate-700 transition-transform group-hover:translate-x-0.5" />
                 </div>
-                <div className="text-[11px] text-[#64748B] mt-1">{isUrdu ? 'اینٹ / یونٹس تیار' : 'Units Ready'}</div>
+                <div className="mt-2">
+                  <div className={`text-2xl sm:text-3xl font-black font-mono leading-tight ${item.textColor}`}>
+                    {item.count.toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-[#64748B] font-medium mt-1">
+                    {item.unit} {isUrdu ? '(منتخب مدت میں)' : '(In Selected Range)'}
+                  </div>
+                </div>
               </div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-3">
-                <div
-                  className={`h-full bg-gradient-to-r ${item.color}`}
-                  style={{ width: `${Math.min(100, (item.count / 100000) * 100)}%` }}
-                />
+
+              <div className="mt-4 pt-2.5 border-t border-slate-200/70">
+                <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden mb-2">
+                  <div
+                    className={`h-full bg-gradient-to-r ${item.color}`}
+                    style={{ width: `${Math.min(100, Math.max(10, ((item.count || item.allTime) / 40000) * 100))}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10.5px] text-slate-600 font-medium">
+                  <span>{isUrdu ? 'کل رجسٹرڈ پیداوار:' : 'All-Time Total:'}</span>
+                  <strong className="font-mono text-slate-800 font-bold">{item.allTime.toLocaleString()}</strong>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

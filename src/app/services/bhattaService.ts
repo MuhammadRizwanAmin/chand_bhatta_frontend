@@ -1254,7 +1254,25 @@ export const bhattaService = {
       return sum;
     }, 0);
     const pakkiAentQty = Math.max(0, totalNikasiQty - pakkiTileQty);
+    const pakkiAvalQty = nikasiRecords.reduce((sum, b) => sum + (Number(b.aval_qty) || 0), 0);
+    const pakkiDoemQty = nikasiRecords.reduce((sum, b) => sum + (Number(b.doem_qty) || 0), 0);
+    const pakkiSoyemQty = nikasiRecords.reduce((sum, b) => sum + (Number(b.soyem_qty) || 0), 0);
     const totalProductionAll = totalKacchiQty + totalNikasiQty;
+
+    // All-time totals across entire database
+    const allTimeKacchiAent = kacchiAll.filter(k => (k.item_type || 'Kacchi_Aent') !== 'Tile').reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
+    const allTimeKacchiTile = kacchiAll.filter(k => k.item_type === 'Tile').reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
+    const allNikasiRecords = bhattiAll.filter(b => b.work_type === 'Nikasi' || !b.work_type);
+    const allTimeNikasiQty = allNikasiRecords.reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
+    const allTimePakkiTile = allNikasiRecords.reduce((sum, b) => {
+      if (b.tile_qty !== undefined && Number(b.tile_qty) > 0) return sum + Number(b.tile_qty);
+      if (b.item_type === 'Tile') return sum + (Number(b.quantity) || 0);
+      return sum;
+    }, 0);
+    const allTimePakkiAent = Math.max(0, allTimeNikasiQty - allTimePakkiTile);
+    const allTimePakkiAval = allNikasiRecords.reduce((sum, b) => sum + (Number(b.aval_qty) || 0), 0);
+    const allTimePakkiDoem = allNikasiRecords.reduce((sum, b) => sum + (Number(b.doem_qty) || 0), 0);
+    const allTimePakkiSoyem = allNikasiRecords.reduce((sum, b) => sum + (Number(b.soyem_qty) || 0), 0);
 
     const totalSalesRevenue = invoices.reduce((sum, i) => {
       const val = Number(i.net_total_amount ?? (i as any).total_amount ?? (i as any).base_amount ?? (i as any).amount ?? 0);
@@ -1317,6 +1335,16 @@ export const bhattaService = {
         kacchiTile: kacchiTileQty,
         pakkiAent: pakkiAentQty,
         pakkiTile: pakkiTileQty,
+        pakkiAval: pakkiAvalQty,
+        pakkiDoem: pakkiDoemQty,
+        pakkiSoyem: pakkiSoyemQty,
+        allTimeKacchiAent,
+        allTimeKacchiTile,
+        allTimePakkiAent,
+        allTimePakkiTile,
+        allTimePakkiAval,
+        allTimePakkiDoem,
+        allTimePakkiSoyem,
       },
       financials: {
         totalSalesRevenue,
