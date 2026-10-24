@@ -222,6 +222,7 @@ const SEED_STOCKS: StockInventory[] = [
   { id: 3, item_name: 'Aent_Soyem', current_stock: 18000 },
   { id: 4, item_name: 'Tile', current_stock: 25000 },
   { id: 5, item_name: 'Kacchi_Aent', current_stock: 120000 },
+  { id: 6, item_name: 'Kacchi_Tile', current_stock: 35000 },
 ];
 
 export function getLocalDateString(d: Date = new Date()): string {
@@ -1242,12 +1243,17 @@ export const bhattaService = {
     const todayNikasiQty = bhattiAll.filter(b => normalizeDate(b.entry_date) === today && b.work_type === 'Nikasi').reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
 
     const totalKacchiQty = kacchi.reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
-    const totalNikasiQty = bhatti.reduce((sum, b) => {
-      if (b.work_type === 'Nikasi' || !b.work_type) {
-        return sum + (Number(b.quantity) || 0);
-      }
+    const kacchiAentQty = kacchi.filter(k => (k.item_type || 'Kacchi_Aent') !== 'Tile').reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
+    const kacchiTileQty = kacchi.filter(k => k.item_type === 'Tile').reduce((sum, k) => sum + (Number(k.quantity) || 0), 0);
+
+    const nikasiRecords = bhatti.filter(b => b.work_type === 'Nikasi' || !b.work_type);
+    const totalNikasiQty = nikasiRecords.reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
+    const pakkiTileQty = nikasiRecords.reduce((sum, b) => {
+      if (b.tile_qty !== undefined && Number(b.tile_qty) > 0) return sum + Number(b.tile_qty);
+      if (b.item_type === 'Tile') return sum + (Number(b.quantity) || 0);
       return sum;
     }, 0);
+    const pakkiAentQty = Math.max(0, totalNikasiQty - pakkiTileQty);
     const totalProductionAll = totalKacchiQty + totalNikasiQty;
 
     const totalSalesRevenue = invoices.reduce((sum, i) => {
@@ -1307,6 +1313,10 @@ export const bhattaService = {
         totalOverall: totalProductionAll,
         totalKacchiAll: totalKacchiQty,
         totalNikasiAll: totalNikasiQty,
+        kacchiAent: kacchiAentQty,
+        kacchiTile: kacchiTileQty,
+        pakkiAent: pakkiAentQty,
+        pakkiTile: pakkiTileQty,
       },
       financials: {
         totalSalesRevenue,
@@ -1353,6 +1363,7 @@ export const bhattaService = {
         soyem: stockMap['Aent_Soyem'] || 0,
         tile: stockMap['Tile'] || 0,
         kacchi: stockMap['Kacchi_Aent'] || 0,
+        kacchiTile: stockMap['Kacchi_Tile'] || 0,
       },
     };
   },

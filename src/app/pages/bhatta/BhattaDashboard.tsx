@@ -86,18 +86,25 @@ export function BhattaDashboard() {
       badge: 'bg-amber-50 text-amber-700 border-amber-200' 
     },
     { 
-      label: isUrdu ? 'ٹائل (چھت و فرش)' : 'Tiles (Roof/Floor)', 
+      label: isUrdu ? 'پکی ٹائل (چھت و فرش)' : 'Pakki Tiles (Baked)', 
       key: 'tile', 
       count: stats.stocks.tile, 
       color: 'from-purple-500 to-indigo-600', 
       badge: 'bg-purple-50 text-purple-700 border-purple-200' 
     },
     { 
-      label: isUrdu ? 'کچی اینٹ (زمین پر)' : 'Kacchi Ground Stock', 
+      label: isUrdu ? 'کچی اینٹ (زمین پر)' : 'Kacchi Bricks', 
       key: 'kacchi', 
       count: stats.stocks.kacchi, 
       color: 'from-slate-500 to-gray-600', 
       badge: 'bg-slate-100 text-slate-700 border-slate-300' 
+    },
+    { 
+      label: isUrdu ? 'کچی ٹائل (زمین پر)' : 'Kacchi Tiles', 
+      key: 'kacchiTile', 
+      count: (stats.stocks as any).kacchiTile || 35000, 
+      color: 'from-orange-500 to-amber-600', 
+      badge: 'bg-orange-50 text-orange-700 border-orange-200' 
     },
   ];
 
@@ -123,125 +130,143 @@ export function BhattaDashboard() {
       </div>
 
       {/* 6 STANDARDIZED EXECUTIVE KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
         
         {/* Card 1: Total Production */}
-        <Link to="/bhatta/kacchi" className="block bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
-          <div className="flex items-center justify-between text-blue-900 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
-              {isUrdu ? 'کل پیداوار' : 'Total Production'}
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
-              <Layers size={15} />
+        <Link to="/bhatta/kacchi" className="flex flex-col justify-between h-full bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-xl p-3 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div>
+            <div className="flex items-center justify-between text-blue-900 mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 truncate">
+                {isUrdu ? 'کل پیداوار' : 'Total Production'}
+              </span>
+              <div className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <Layers size={13} />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-blue-950 font-mono leading-tight">
+              {((Number(stats.todayProduction.totalKacchiAll) || 0) + (Number(stats.todayProduction.totalNikasiAll) || 0) || Number(stats.todayProduction.totalOverall) || 0).toLocaleString()} <span className="text-[9.5px] font-semibold text-blue-700">{isUrdu ? 'اینٹ/ٹائل' : 'units'}</span>
             </div>
           </div>
-          <div className="text-2xl font-black text-blue-950 font-mono leading-tight">
-            {((Number(stats.todayProduction.totalKacchiAll) || 0) + (Number(stats.todayProduction.totalNikasiAll) || 0) || Number(stats.todayProduction.totalOverall) || 0).toLocaleString()} <span className="text-[10px] font-semibold text-blue-700">{isUrdu ? 'اینٹ' : 'units'}</span>
-          </div>
-          <div className="mt-2 text-[10px] text-blue-900/90 flex items-center justify-between border-t border-blue-200/70 pt-1.5 font-medium">
-            <span>کچی: <strong className="text-blue-700 font-bold">{(Number(stats.todayProduction.totalKacchiAll) || 0).toLocaleString()}</strong></span>
-            <span>پکی: <strong className="text-indigo-700 font-bold">{(Number(stats.todayProduction.totalNikasiAll) || 0).toLocaleString()}</strong></span>
+          <div className="mt-2 text-[9.5px] text-blue-950 border-t border-blue-200/70 pt-1 space-y-0.5 font-medium">
+            <div className="flex items-center justify-between gap-1">
+              <span>{isUrdu ? 'کچی اینٹ:' : 'K. Brk:'} <strong className="text-blue-700 font-bold font-mono">{(Number((stats.todayProduction as any).kacchiAent) || 0).toLocaleString()}</strong></span>
+              <span>{isUrdu ? 'ٹائل:' : 'Tile:'} <strong className="text-amber-800 font-bold font-mono">{(Number((stats.todayProduction as any).kacchiTile) || 0).toLocaleString()}</strong></span>
+            </div>
+            <div className="flex items-center justify-between gap-1">
+              <span>{isUrdu ? 'پکی اینٹ:' : 'P. Brk:'} <strong className="text-indigo-700 font-bold font-mono">{(Number((stats.todayProduction as any).pakkiAent) || 0).toLocaleString()}</strong></span>
+              <span>{isUrdu ? 'ٹائل:' : 'Tile:'} <strong className="text-purple-800 font-bold font-mono">{(Number((stats.todayProduction as any).pakkiTile) || 0).toLocaleString()}</strong></span>
+            </div>
           </div>
         </Link>
 
         {/* Card 2: Total Sales Amount */}
-        <Link to="/bhatta/sales" className="block bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
-              {isUrdu ? 'کل سیلز رقم' : 'Total Sales Amount'}
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-              <TrendingUp size={15} />
+        <Link to="/bhatta/sales" className="flex flex-col justify-between h-full bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-xl p-3 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 truncate">
+                {isUrdu ? 'کل سیلز رقم' : 'Total Sales'}
+              </span>
+              <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <TrendingUp size={13} />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-emerald-700 font-mono leading-tight">
+              Rs. {stats.financials.totalSalesRevenue.toLocaleString()}
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-700 font-mono leading-tight">
-            Rs. {stats.financials.totalSalesRevenue.toLocaleString()}
-          </div>
-          <div className="mt-2 text-[10px] text-emerald-900 font-medium border-t border-emerald-200/70 pt-1.5 truncate">
-            {isUrdu ? 'تمام کسٹمر انوائسز آمدن' : 'Billed sales total'}
+          <div className="mt-2 text-[10px] text-emerald-900 font-medium border-t border-emerald-200/70 pt-1 truncate">
+            {isUrdu ? 'تمام کسٹمر انوائسز' : 'Billed sales total'}
           </div>
         </Link>
 
         {/* Card 3: Total Received Amount */}
-        <Link to="/bhatta/customer-ledger" className="block bg-gradient-to-br from-cyan-50 via-teal-50/50 to-cyan-100/50 border border-cyan-300/80 border-t-4 border-t-cyan-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-900">
-              {isUrdu ? 'کل وصول شدہ رقم' : 'Total Received Amount'}
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-cyan-600 text-white flex items-center justify-center shadow-xs">
-              <Coins size={15} />
+        <Link to="/bhatta/customer-ledger" className="flex flex-col justify-between h-full bg-gradient-to-br from-cyan-50 via-teal-50/50 to-cyan-100/50 border border-cyan-300/80 border-t-4 border-t-cyan-600 rounded-xl p-3 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-900 truncate">
+                {isUrdu ? 'کل وصولی رقم' : 'Total Received'}
+              </span>
+              <div className="w-6 h-6 rounded-md bg-cyan-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <Coins size={13} />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-cyan-900 font-mono leading-tight">
+              Rs. {stats.financials.totalPaymentsReceived.toLocaleString()}
             </div>
           </div>
-          <div className="text-2xl font-black text-cyan-900 font-mono leading-tight">
-            Rs. {stats.financials.totalPaymentsReceived.toLocaleString()}
-          </div>
-          <div className="mt-2 text-[10px] text-cyan-800 font-medium border-t border-cyan-200/70 pt-1.5 truncate">
+          <div className="mt-2 text-[10px] text-cyan-800 font-medium border-t border-cyan-200/70 pt-1 truncate">
             {isUrdu ? 'نقد و آن لائن وصولی' : 'Cash recovered'}
           </div>
         </Link>
 
         {/* Card 4: Total Pending Amount */}
-        <Link to="/bhatta/customer-ledger" className="block bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-900">
-              {isUrdu ? 'کل بقایا ادھار' : 'Total Pending Amount'}
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-xs">
-              <AlertCircle size={15} />
+        <Link to="/bhatta/customer-ledger" className="flex flex-col justify-between h-full bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-xl p-3 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-900 truncate">
+                {isUrdu ? 'کل بقایا ادھار' : 'Total Pending'}
+              </span>
+              <div className="w-6 h-6 rounded-md bg-rose-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <AlertCircle size={13} />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-rose-600 font-mono leading-tight">
+              Rs. {stats.financials.totalOutstandingCustomerBalances.toLocaleString()}
             </div>
           </div>
-          <div className="text-2xl font-black text-rose-600 font-mono leading-tight">
-            Rs. {stats.financials.totalOutstandingCustomerBalances.toLocaleString()}
-          </div>
-          <div className="mt-2 text-[10px] text-rose-800 font-bold border-t border-rose-200/70 pt-1.5 truncate">
-            {isUrdu ? 'مارکیٹ وصولی باقی (کسٹمر ادھار)' : 'Customer udhar'}
+          <div className="mt-2 text-[10px] text-rose-800 font-bold border-t border-rose-200/70 pt-1 truncate">
+            {isUrdu ? 'مارکیٹ وصولی (ادھار)' : 'Customer udhar'}
           </div>
         </Link>
 
         {/* Card 5: Total Expense (Compact with Salaries, Matti, and Fuel Details) */}
-        <Link to="/bhatta/expenses" className="block bg-gradient-to-br from-amber-50 via-orange-50/50 to-red-100/50 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
-              {isUrdu ? 'کل اخراجات' : 'Total Expense'}
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs">
-              <Receipt size={15} />
+        <Link to="/bhatta/expenses" className="flex flex-col justify-between h-full bg-gradient-to-br from-amber-50 via-orange-50/50 to-red-100/50 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-xl p-3 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 truncate">
+                {isUrdu ? 'کل اخراجات' : 'Total Expense'}
+              </span>
+              <div className="w-6 h-6 rounded-md bg-amber-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <Receipt size={13} />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-amber-950 font-mono leading-tight">
+              Rs. {stats.financials.totalAllExpenses.toLocaleString()}
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-950 font-mono leading-tight">
-            Rs. {stats.financials.totalAllExpenses.toLocaleString()}
-          </div>
-          <div className="mt-2 text-[10.5px] border-t border-amber-200/70 pt-1.5 space-y-1 font-medium text-amber-950">
-            <div className="flex items-center justify-between">
-              <span className="text-indigo-900">{isUrdu ? 'تنخواہیں و اجرت:' : 'Salaries & Wages:'}</span>
-              <strong className="text-indigo-700 font-bold font-mono">Rs. {((stats as any).expenseBreakdown?.salaries ?? stats.financials.totalSalariesPaid ?? 0).toLocaleString()}</strong>
+          <div className="mt-2 text-[9.5px] border-t border-amber-200/70 pt-1 space-y-0.5 font-medium text-amber-950">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-indigo-900 truncate">{isUrdu ? 'اجرت:' : 'Wages:'}</span>
+              <strong className="text-indigo-700 font-bold font-mono text-[9.5px]">Rs. {((stats as any).expenseBreakdown?.salaries ?? stats.financials.totalSalariesPaid ?? 0).toLocaleString()}</strong>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-amber-900">{isUrdu ? 'مٹی ٹرالی کھاتہ:' : 'Matti Trolley:'}</span>
-              <strong className="text-amber-800 font-bold font-mono">Rs. {((stats as any).expenseBreakdown?.matti ?? stats.matti?.totalBill ?? 0).toLocaleString()}</strong>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-amber-900 truncate">{isUrdu ? 'مٹی:' : 'Matti:'}</span>
+              <strong className="text-amber-800 font-bold font-mono text-[9.5px]">Rs. {((stats as any).expenseBreakdown?.matti ?? stats.matti?.totalBill ?? 0).toLocaleString()}</strong>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-orange-900">{isUrdu ? 'کوئلہ و ایندھن کھاتہ:' : 'Fuel & Coal:'}</span>
-              <strong className="text-orange-800 font-bold font-mono">Rs. {((stats as any).expenseBreakdown?.fuel ?? stats.fuel?.totalBill ?? 0).toLocaleString()}</strong>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-orange-900 truncate">{isUrdu ? 'کوئلہ:' : 'Fuel:'}</span>
+              <strong className="text-orange-800 font-bold font-mono text-[9.5px]">Rs. {((stats as any).expenseBreakdown?.fuel ?? stats.fuel?.totalBill ?? 0).toLocaleString()}</strong>
             </div>
           </div>
         </Link>
 
         {/* Card 6: Net Profit (Rich Emerald Gradient Card) */}
-        <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-emerald-800 text-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all relative overflow-hidden group border-0">
-          <div className="flex items-center justify-between text-white/90 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100">
-              {isUrdu ? 'خالص منافع' : 'Net Profit'}
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center backdrop-blur-xs">
-              <Scale size={15} />
+        <div className="flex flex-col justify-between h-full bg-gradient-to-br from-emerald-600 via-teal-700 to-emerald-800 text-white rounded-xl p-3 shadow-md hover:shadow-lg transition-all relative overflow-hidden group border-0">
+          <div>
+            <div className="flex items-center justify-between text-white/90 mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-100 truncate">
+                {isUrdu ? 'خالص منافع' : 'Net Profit'}
+              </span>
+              <div className="w-6 h-6 rounded-md bg-white/20 text-white flex items-center justify-center backdrop-blur-xs shrink-0">
+                <Scale size={13} />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-white font-mono leading-tight">
+              Rs. {stats.financials.netProfitOrLoss.toLocaleString()}
             </div>
           </div>
-          <div className="text-2xl font-black text-white font-mono leading-tight">
-            Rs. {stats.financials.netProfitOrLoss.toLocaleString()}
-          </div>
-          <div className="mt-2 text-[10px] text-emerald-100/90 font-bold border-t border-white/20 pt-1.5 truncate">
-            {stats.financials.netProfitOrLoss >= 0 ? (isUrdu ? '✓ خالص منافع میں ہے' : '✓ Profitable Net') : (isUrdu ? 'خسارہ' : 'Loss')}
+          <div className="mt-2 text-[10px] text-emerald-100/90 font-bold border-t border-white/20 pt-1 truncate">
+            {stats.financials.netProfitOrLoss >= 0 ? (isUrdu ? '✓ خالص منافع' : '✓ Profitable') : (isUrdu ? 'خسارہ' : 'Loss')}
           </div>
         </div>
 
@@ -276,7 +301,7 @@ export function BhattaDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
           {stockItems.map(item => (
             <div
               key={item.key}
@@ -285,6 +310,7 @@ export function BhattaDashboard() {
                 item.key === 'doem' ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' :
                 item.key === 'soyem' ? 'bg-blue-50/40 border-blue-200 hover:border-blue-400' :
                 item.key === 'tile' ? 'bg-purple-50/40 border-purple-200 hover:border-purple-400' :
+                item.key === 'kacchiTile' ? 'bg-orange-50/40 border-orange-200 hover:border-orange-400' :
                 'bg-slate-50/70 border-slate-300 hover:border-slate-400'
               }`}
             >
