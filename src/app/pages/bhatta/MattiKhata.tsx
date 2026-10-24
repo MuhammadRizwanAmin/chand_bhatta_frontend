@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   bhattaService,
   MattiTrolleyRecord,
+  getLocalDateString,
 } from '../../services/bhattaService';
 import {
   Truck,
@@ -28,7 +29,7 @@ export function MattiKhata() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: getLocalDateString(new Date()),
     trolley_count: 5 as number | string,
     rate_per_trolley: 2500 as number | string,
     paid_amount: 12500 as number | string,
@@ -47,7 +48,7 @@ export function MattiKhata() {
   const handleOpenAdd = () => {
     setEditingId(null);
     setForm({
-      entry_date: new Date().toISOString().split('T')[0],
+      entry_date: getLocalDateString(new Date()),
       trolley_count: 5,
       rate_per_trolley: 2500,
       paid_amount: 12500,

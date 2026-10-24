@@ -4,6 +4,7 @@ import {
   SalesInvoice,
   Customer,
   DriverVehicle,
+  getLocalDateString,
 } from '../../services/bhattaService';
 import {
   FileText,
@@ -54,7 +55,7 @@ export function SalesInvoiceBilling() {
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     customer_id: customers[0]?.id || 1,
-    invoice_date: new Date().toISOString().split('T')[0],
+    invoice_date: getLocalDateString(new Date()),
     item_type: 'Aent_Aval' as SalesInvoice['item_type'],
     quantity: 10000,
     rate_per_thousand: 14000,
@@ -230,7 +231,7 @@ export function SalesInvoiceBilling() {
     setShowCustomerDropdown(false);
     setFormData({
       customer_id: defaultCust?.id || 1,
-      invoice_date: new Date().toISOString().split('T')[0],
+      invoice_date: getLocalDateString(new Date()),
       item_type: 'Aent_Aval',
       quantity: 10000,
       rate_per_thousand: 14000,

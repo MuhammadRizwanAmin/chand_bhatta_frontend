@@ -17,7 +17,9 @@ import {
   ArrowRight,
   ChevronDown,
   X,
-  Filter
+  Filter,
+  Truck,
+  Flame,
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { BhattaInvoiceModal } from '../../components/BhattaInvoiceModal';
@@ -120,11 +122,11 @@ export function BhattaDashboard() {
         </div>
       </div>
 
-      {/* 7 STANDARDIZED EXECUTIVE KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
+      {/* 9 STANDARDIZED EXECUTIVE KPI CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         
         {/* Card 1: Total Production */}
-        <div className="bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        <Link to="/bhatta/kacchi" className="block bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
           <div className="flex items-center justify-between text-blue-900 mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
               {isUrdu ? 'کل پیداوار' : 'Total Production'}
@@ -140,10 +142,10 @@ export function BhattaDashboard() {
             <span>کچی: <strong className="text-blue-700 font-bold">{(Number(stats.todayProduction.totalKacchiAll) || 0).toLocaleString()}</strong></span>
             <span>پکی: <strong className="text-indigo-700 font-bold">{(Number(stats.todayProduction.totalNikasiAll) || 0).toLocaleString()}</strong></span>
           </div>
-        </div>
+        </Link>
 
         {/* Card 2: Total Sales Amount */}
-        <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        <Link to="/bhatta/sales" className="block bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
               {isUrdu ? 'کل سیلز رقم' : 'Total Sales Amount'}
@@ -158,10 +160,10 @@ export function BhattaDashboard() {
           <div className="mt-2 text-[10px] text-emerald-900 font-medium border-t border-emerald-200/70 pt-1.5 truncate">
             {isUrdu ? 'تمام کسٹمر انوائسز آمدن' : 'Billed sales total'}
           </div>
-        </div>
+        </Link>
 
         {/* Card 3: Total Received Amount */}
-        <div className="bg-gradient-to-br from-cyan-50 via-teal-50/50 to-cyan-100/50 border border-cyan-300/80 border-t-4 border-t-cyan-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        <Link to="/bhatta/customer-ledger" className="block bg-gradient-to-br from-cyan-50 via-teal-50/50 to-cyan-100/50 border border-cyan-300/80 border-t-4 border-t-cyan-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-900">
               {isUrdu ? 'کل وصول شدہ رقم' : 'Total Received Amount'}
@@ -176,10 +178,10 @@ export function BhattaDashboard() {
           <div className="mt-2 text-[10px] text-cyan-800 font-medium border-t border-cyan-200/70 pt-1.5 truncate">
             {isUrdu ? 'نقد و آن لائن وصولی' : 'Cash recovered'}
           </div>
-        </div>
+        </Link>
 
         {/* Card 4: Total Pending Amount */}
-        <div className="bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        <Link to="/bhatta/customer-ledger" className="block bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-rose-900">
               {isUrdu ? 'کل بقایا ادھار' : 'Total Pending Amount'}
@@ -192,12 +194,58 @@ export function BhattaDashboard() {
             Rs. {stats.financials.totalOutstandingCustomerBalances.toLocaleString()}
           </div>
           <div className="mt-2 text-[10px] text-rose-800 font-bold border-t border-rose-200/70 pt-1.5 truncate">
-            {isUrdu ? 'مارکیٹ وصولی باقی (ادھار)' : 'Customer udhar'}
+            {isUrdu ? 'مارکیٹ وصولی باقی (کسٹمر ادھار)' : 'Customer udhar'}
           </div>
-        </div>
+        </Link>
 
-        {/* Card 5: Total Salaries (Labor + Staff) */}
-        <div className="bg-gradient-to-br from-violet-50 via-purple-50/50 to-indigo-100/50 border border-indigo-300/80 border-t-4 border-t-indigo-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        {/* Card 5: Matti Trolley Khata (مٹی ٹرالی کھاتہ) */}
+        <Link to="/bhatta/matti" className="block bg-gradient-to-br from-amber-50 via-yellow-50/40 to-orange-100/50 border border-amber-300/80 border-t-4 border-t-amber-500 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div className="flex items-center justify-between text-amber-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+              {isUrdu ? 'مٹی ٹرالی کھاتہ' : 'Matti Trolley Khata'}
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+              <Truck size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-amber-950 font-mono leading-tight">
+            Rs. {(stats.matti?.totalBill || 0).toLocaleString()}
+          </div>
+          <div className="mt-2 text-[10px] text-amber-900/90 flex items-center justify-between border-t border-amber-200/70 pt-1.5 font-medium">
+            <span>ادا: <strong className="text-emerald-700 font-bold">Rs. {(stats.matti?.totalPaid || 0).toLocaleString()}</strong></span>
+            <span>بقایا: <strong className="text-rose-600 font-bold">Rs. {(stats.matti?.totalPending || 0).toLocaleString()}</strong></span>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[10px] text-amber-800 font-medium pt-0.5">
+            <span>{stats.matti?.trolleyCount || 0} {isUrdu ? 'ٹرالیاں' : 'trolleys'}</span>
+            <span className="text-blue-700 hover:underline font-bold">{isUrdu ? 'تفصیلات دیکھیں &rarr;' : 'Details &rarr;'}</span>
+          </div>
+        </Link>
+
+        {/* Card 6: Fuel & Coal Khata (کوئلہ و ایندھن کھاتہ) */}
+        <Link to="/bhatta/fuel" className="block bg-gradient-to-br from-orange-50 via-red-50/40 to-amber-100/50 border border-orange-300/80 border-t-4 border-t-orange-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+          <div className="flex items-center justify-between text-orange-900 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-orange-900">
+              {isUrdu ? 'کوئلہ و ایندھن کھاتہ' : 'Fuel & Coal Khata'}
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-orange-600 text-white flex items-center justify-center shadow-xs">
+              <Flame size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-orange-950 font-mono leading-tight">
+            Rs. {(stats.fuel?.totalBill || 0).toLocaleString()}
+          </div>
+          <div className="mt-2 text-[10px] text-orange-900/90 flex items-center justify-between border-t border-orange-200/70 pt-1.5 font-medium">
+            <span>ادا: <strong className="text-emerald-700 font-bold">Rs. {(stats.fuel?.totalPaid || 0).toLocaleString()}</strong></span>
+            <span>بقایا: <strong className="text-rose-600 font-bold">Rs. {(stats.fuel?.totalPending || 0).toLocaleString()}</strong></span>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[10px] text-orange-900 font-medium pt-0.5">
+            <span>{stats.fuel?.totalQuantity || 0} {isUrdu ? 'من / بیگز' : 'mounds/units'}</span>
+            <span className="text-blue-700 hover:underline font-bold">{isUrdu ? 'تفصیلات دیکھیں &rarr;' : 'Details &rarr;'}</span>
+          </div>
+        </Link>
+
+        {/* Card 7: Total Salaries (Labor + Staff) */}
+        <Link to="/bhatta/staff" className="block bg-gradient-to-br from-violet-50 via-purple-50/50 to-indigo-100/50 border border-indigo-300/80 border-t-4 border-t-indigo-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-900">
               {isUrdu ? 'تنخواہیں (ادا و بقایا)' : 'Total Salaries'}
@@ -213,10 +261,13 @@ export function BhattaDashboard() {
             <span>ادا: <strong className="text-emerald-700 font-bold">Rs. {stats.financials.totalSalariesPaid.toLocaleString()}</strong></span>
             <span>بقایا: <strong className="text-rose-600 font-bold">Rs. {stats.financials.totalSalariesRemaining.toLocaleString()}</strong></span>
           </div>
-        </div>
+          <div className="mt-1 text-right text-[10px] text-blue-700 hover:underline font-bold pt-0.5">
+            {isUrdu ? 'مزدور کھاتہ دیکھیں &rarr;' : 'Staff Ledger &rarr;'}
+          </div>
+        </Link>
 
-        {/* Card 6: Total Expenses (Integrated with Salaries & Matti Trolley) */}
-        <div className="bg-gradient-to-br from-amber-50 via-orange-50/50 to-red-100/50 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
+        {/* Card 8: Total Expenses (Integrated with Salaries & Matti Trolley) */}
+        <Link to="/bhatta/expenses" className="block bg-gradient-to-br from-amber-50 via-orange-50/50 to-red-100/50 border border-amber-300/80 border-t-4 border-t-amber-600 rounded-xl p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
               {isUrdu ? 'کل اخراجات' : 'Total Expense'}
@@ -230,13 +281,13 @@ export function BhattaDashboard() {
           </div>
           <div className="mt-2 text-[10px] text-amber-900 font-medium flex items-center justify-between border-t border-amber-200/70 pt-1.5">
             <span>{isUrdu ? 'مٹی، تنخواہ، کوئلہ، دیگر' : 'Clay, Salaries, Fuel'}</span>
-            <Link to="/bhatta/expenses" className="text-blue-700 hover:underline font-bold">
+            <span className="text-blue-700 hover:underline font-bold">
               {isUrdu ? 'کھاتہ &rarr;' : 'Ledger &rarr;'}
-            </Link>
+            </span>
           </div>
-        </div>
+        </Link>
 
-        {/* Card 7: Net Profit (Rich Emerald Gradient Card) */}
+        {/* Card 9: Net Profit (Rich Emerald Gradient Card) */}
         <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-emerald-800 text-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all relative overflow-hidden group border-0">
           <div className="flex items-center justify-between text-white/90 mb-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100">

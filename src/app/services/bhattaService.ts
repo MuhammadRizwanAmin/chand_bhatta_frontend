@@ -224,9 +224,16 @@ const SEED_STOCKS: StockInventory[] = [
   { id: 5, item_name: 'Kacchi_Aent', current_stock: 120000 },
 ];
 
-const todayStr = new Date().toISOString().split('T')[0];
-const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-const twoDaysAgoStr = new Date(Date.now() - 172800000).toISOString().split('T')[0];
+export function getLocalDateString(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const todayStr = getLocalDateString(new Date());
+const yesterdayStr = getLocalDateString(new Date(Date.now() - 86400000));
+const twoDaysAgoStr = getLocalDateString(new Date(Date.now() - 172800000));
 
 const SEED_KACCHI: KacchiAentRecord[] = [
   { id: 1, employee_id: 2, entry_date: todayStr, item_type: 'Kacchi_Aent', quantity: 7500, rate_per_thousand: 1500, total_amount: 11250, status: 'Paid' },
@@ -361,7 +368,7 @@ const SEED_ATTENDANCE: EmployeeAttendance[] = [
 ];
 
 // Bhatta Storage Versioning for clean, accurate calculations
-const CURRENT_DATA_VERSION = 'v5_accurate_flow_calibrated';
+const CURRENT_DATA_VERSION = 'v6_matti_fuel_today_sync';
 if (typeof window !== 'undefined') {
   try {
     const savedVersion = localStorage.getItem('bhatta_data_version');
@@ -369,7 +376,7 @@ if (typeof window !== 'undefined') {
       const keysToClear = [
         'employees', 'customers', 'categories', 'stocks', 'kacchi',
         'bhatti', 'advances', 'expenses', 'matti', 'fuel', 'invoices',
-        'payments', 'attendance'
+        'payments', 'attendance', 'staff_salaries'
       ];
       keysToClear.forEach(k => localStorage.removeItem(`bhatta_${k}`));
       localStorage.setItem('bhatta_data_version', CURRENT_DATA_VERSION);
@@ -1150,7 +1157,7 @@ export const bhattaService = {
 
   // Executive Dashboard Aggregation
   getExecutiveDashboardStats(range?: { startDate: string; endDate: string }) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString(new Date());
     const kacchiAll = this.getKacchiRecords();
     const bhattiAll = this.getBhattiRecords();
     const invoicesAll = this.getInvoices();
@@ -1240,6 +1247,18 @@ export const bhattaService = {
     const totalAllExpenses = totalGeneralExpenses + totalMattiCost + totalFuelCost + totalLaborCost + totalStaffSalaryPaid;
     const netProfitOrLoss = totalSalesRevenue - totalAllExpenses;
 
+    // Matti Trolley Khata aggregation for selected range
+    const totalMattiBill = matti.reduce((sum, m) => sum + (Number(m.total_amount) || 0), 0);
+    const totalMattiPaid = matti.reduce((sum, m) => sum + (Number(m.paid_amount) || 0), 0);
+    const totalMattiPending = Math.max(0, totalMattiBill - totalMattiPaid);
+    const totalMattiTrolleys = matti.reduce((sum, m) => sum + (Number(m.trolley_count) || 0), 0);
+
+    // Fuel & Coal Khata aggregation for selected range
+    const totalFuelBill = fuel.reduce((sum, f) => sum + (Number(f.total_amount) || 0), 0);
+    const totalFuelPaid = fuel.reduce((sum, f) => sum + (Number(f.paid_amount) || 0), 0);
+    const totalFuelPending = Math.max(0, totalFuelBill - totalFuelPaid);
+    const totalFuelQuantity = fuel.reduce((sum, f) => sum + (Number(f.quantity) || 0), 0);
+
     const stockMap: Record<string, number> = {};
     stocks.forEach(s => {
       stockMap[s.item_name] = Number(s.current_stock) || 0;
@@ -1266,6 +1285,18 @@ export const bhattaService = {
         totalSalariesRemaining,
         totalAllExpenses,
         netProfitOrLoss,
+      },
+      matti: {
+        totalBill: totalMattiBill,
+        totalPaid: totalMattiPaid,
+        totalPending: totalMattiPending,
+        trolleyCount: totalMattiTrolleys,
+      },
+      fuel: {
+        totalBill: totalFuelBill,
+        totalPaid: totalFuelPaid,
+        totalPending: totalFuelPending,
+        totalQuantity: totalFuelQuantity,
       },
       stocks: {
         aval: stockMap['Aent_Aval'] || 0,

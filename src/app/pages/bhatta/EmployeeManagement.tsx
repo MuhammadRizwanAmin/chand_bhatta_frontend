@@ -148,6 +148,10 @@ export function EmployeeManagement() {
   }));
   const getPaymentSummary = (employeeId: number) => paymentSummaries.get(employeeId) || { total: 0, paid: 0, pending: 0, status: 'Unpaid' };
 
+  const totalWagesAndSalaries = Array.from(paymentSummaries.values()).reduce((sum, item) => sum + item.total, 0);
+  const totalPaidSalaries = Array.from(paymentSummaries.values()).reduce((sum, item) => sum + item.paid, 0);
+  const totalPendingSalaries = Array.from(paymentSummaries.values()).reduce((sum, item) => sum + item.pending, 0);
+
   // Filtered employees
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch =
@@ -246,48 +250,78 @@ export function EmployeeManagement() {
         </div>
       </div>
 
-      {/* 3 Metric Cards for Workforce & Attendance Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Card 1: Total Registered Workers */}
+      {/* 4 Metric Cards: Total Workers, Total Salaries & Wages, Total Paid Salaries, Total Pending Salaries */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Workers */}
         <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-blue-100/40 border border-blue-300/80 border-t-4 border-t-blue-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between text-blue-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Registered Workers (کل عملہ و مزدور)</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {isUrdu ? 'کل رجسٹرڈ مزدور' : 'Total Workers'} (کل عملہ و مزدور)
+            </span>
             <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
               <Users size={16} />
             </div>
           </div>
           <div className="text-2xl font-black text-blue-950 font-mono">
-            {employees.length} <span className="text-xs font-semibold text-blue-700">Workers</span>
+            {employees.length} <span className="text-xs font-semibold text-blue-700">{isUrdu ? 'مزدور' : 'Workers'}</span>
           </div>
-          <p className="text-[11px] text-blue-900 font-medium mt-1">Total registered in bhatta khata</p>
+          <p className="text-[11px] text-blue-900 font-medium mt-1">
+            {isUrdu ? 'بھٹہ میں رجسٹرڈ کل افرادی قوت' : 'Total registered in bhatta khata'}
+          </p>
         </div>
 
-        {/* Card 2: Active Labor & Staff */}
+        {/* Card 2: Total Salaries & Wages */}
+        <div className="bg-gradient-to-br from-indigo-50 via-purple-50/40 to-indigo-100/40 border border-indigo-300/80 border-t-4 border-t-indigo-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+          <div className="flex items-center justify-between text-indigo-900 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {isUrdu ? 'کل تنخواہیں و اجرت' : 'Total Salaries & Wages'} (کل رقم)
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+              <Coins size={16} />
+            </div>
+          </div>
+          <div className="text-2xl font-black text-indigo-950 font-mono">
+            Rs. {totalWagesAndSalaries.toLocaleString()}
+          </div>
+          <p className="text-[11px] text-indigo-900 font-medium mt-1">
+            {isUrdu ? 'پتھائی، بھٹی و ماہانہ ملازمین کی کل رقم' : 'Total earned wages & monthly salaries'}
+          </p>
+        </div>
+
+        {/* Card 3: Total Paid Salaries */}
         <div className="bg-gradient-to-br from-emerald-50 via-green-50/50 to-emerald-100/50 border border-emerald-300/80 border-t-4 border-t-emerald-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between text-emerald-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Active Labor & Staff (فعال مزدور)</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {isUrdu ? 'کل ادا شدہ تنخواہیں' : 'Total Paid Salaries'} (ادا شدہ)
+            </span>
             <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
               <CheckCircle2 size={16} />
             </div>
           </div>
           <div className="text-2xl font-black text-emerald-700 font-mono">
-            {employees.filter(e => e.status === 'Active').length} <span className="text-xs font-semibold text-emerald-800">Active</span>
+            Rs. {totalPaidSalaries.toLocaleString()}
           </div>
-          <p className="text-[11px] text-emerald-900 font-medium mt-1">Currently assigned to active work</p>
+          <p className="text-[11px] text-emerald-900 font-medium mt-1">
+            {isUrdu ? 'مزدور پیشگی (ایڈوانس) اور ادا شدہ تنخواہیں' : 'Advances & monthly salaries paid'}
+          </p>
         </div>
 
-        {/* Card 3: Today's Attendance */}
-        <div className="bg-gradient-to-br from-amber-50 via-yellow-50/40 to-amber-100/40 border border-amber-300/80 border-t-4 border-t-amber-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between text-amber-900 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Attendance Status (حاضری کیفیت)</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <Clock size={16} />
+        {/* Card 4: Total Pending Salaries */}
+        <div className="bg-gradient-to-br from-rose-50 via-red-50/50 to-rose-100/50 border border-rose-300/80 border-t-4 border-t-rose-600 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
+          <div className="flex items-center justify-between text-rose-900 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {isUrdu ? 'کل بقایا تنخواہیں' : 'Total Pending Salaries'} (بقایا)
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-xs">
+              <AlertCircle size={16} />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-900 font-mono">
-            {attendanceList.filter(a => a.status === 'Present').length} / {employees.filter(e => e.status === 'Active').length} <span className="text-xs font-semibold text-amber-800">Present</span>
+          <div className="text-2xl font-black text-rose-600 font-mono">
+            Rs. {totalPendingSalaries.toLocaleString()}
           </div>
-          <p className="text-[11px] text-amber-900 font-medium mt-1">Present on date {attendanceDate}</p>
+          <p className="text-[11px] text-rose-800 font-bold mt-1">
+            {isUrdu ? 'مزدوروں اور عملہ کی واجب الادا رقم' : 'Remaining balance payable to staff'}
+          </p>
         </div>
       </div>
 

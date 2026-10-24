@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   bhattaService,
   FuelMasalaExpense,
+  getLocalDateString,
 } from '../../services/bhattaService';
 import {
   Flame,
@@ -29,7 +30,7 @@ export function FuelKhata() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: getLocalDateString(new Date()),
     item_type: 'Kuila' as 'Lakri' | 'Kuila' | 'Masala_Bhura',
     quantity: 100 as number | string,
     unit_rate: 650 as number | string,
@@ -49,7 +50,7 @@ export function FuelKhata() {
   const handleOpenAdd = () => {
     setEditingId(null);
     setForm({
-      entry_date: new Date().toISOString().split('T')[0],
+      entry_date: getLocalDateString(new Date()),
       item_type: 'Kuila',
       quantity: 100,
       unit_rate: 650,
