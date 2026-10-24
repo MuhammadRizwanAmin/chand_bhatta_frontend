@@ -44,6 +44,15 @@ export function DailyExpensesKhata() {
 
   useEffect(() => {
     refreshData();
+    const handleUpdate = () => refreshData();
+    window.addEventListener('bhatta_data_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+    return () => {
+      window.removeEventListener('bhatta_data_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+    };
   }, []);
 
   const refreshData = () => {
@@ -67,7 +76,7 @@ export function DailyExpensesKhata() {
 
   const handleOpenEdit = (exp: DailyExpense) => {
     if (exp.is_salary_mapped) {
-      alert('This expense is automatically mapped from the Staff / Labor Salary ledger. Please update it from the Employee/Worker management screen.');
+      alert('یہ خرچہ تنخواہوں، مٹی ٹرالی یا کوئلہ/ایندھن کھاتہ سے منسلک ہے۔ اسے تبدیل کرنے کے لیے متعلقہ کھاتہ صفحہ استعمال کریں۔\n(This expense is auto-linked from Salaries, Matti Trolley, or Fuel Ledger. Please update it from its dedicated ledger.)');
       return;
     }
     setEditingExpenseId(exp.id);
@@ -117,6 +126,10 @@ export function DailyExpensesKhata() {
   };
 
   const handleDeleteExpense = (exp: DailyExpense) => {
+    if (exp.is_salary_mapped) {
+      alert('یہ خرچہ تنخواہوں، مٹی ٹرالی یا کوئلہ/ایندھن کھاتہ سے منسلک ہے۔ اسے حذف کرنے کے لیے متعلقہ کھاتہ صفحہ استعمال کریں۔\n(This expense is auto-linked from Salaries, Matti Trolley, or Fuel Ledger. Please delete/manage it from its dedicated ledger.)');
+      return;
+    }
     if (window.confirm('Delete this expense record?')) {
       bhattaService.deleteExpense(exp.id);
       refreshData();

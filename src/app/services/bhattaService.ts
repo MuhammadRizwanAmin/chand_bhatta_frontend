@@ -287,10 +287,8 @@ const SEED_STAFF_SALARIES: StaffSalaryPayment[] = [
 
 const SEED_EXPENSES: DailyExpense[] = [
   { id: 1, title: 'Chai & Lunch', category_id: 1, category_name: 'Chai & Food', expense_date: todayStr, amount: 3500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Labor tea, biscuits & lunch' },
-  { id: 2, title: 'Tractor Diesel', category_id: 2, category_name: 'Generator & Fuel', expense_date: todayStr, amount: 6500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Diesel for tractor trolley & tube well' },
-  { id: 3, title: 'Machine Greasing', category_id: 3, category_name: 'Machinery Maintenance', expense_date: yesterdayStr, amount: 3000, payment_mode: 'Cash', paid_by: 'Seth Haji Nasir', description: 'Gari grease and bearing replacement' },
-  { id: 4, title: 'Matti Delivery', category_id: 8, category_name: 'Matti Trolley', expense_date: todayStr, amount: 12500, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: '5 Trolleys Chikni Matti payment' },
-  { id: 5, title: 'Lighting & Cables', category_id: 7, category_name: 'Miscellaneous', expense_date: yesterdayStr, amount: 2000, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Bhatta lighting bulbs & wires' },
+  { id: 2, title: 'Machine Greasing & Parts', category_id: 3, category_name: 'Machinery Maintenance', expense_date: yesterdayStr, amount: 3000, payment_mode: 'Cash', paid_by: 'Seth Haji Nasir', description: 'Gari grease and bearing replacement' },
+  { id: 3, title: 'Lighting & Cables', category_id: 7, category_name: 'Miscellaneous', expense_date: yesterdayStr, amount: 2000, payment_mode: 'Cash', paid_by: 'Munshi Sarwar', description: 'Bhatta lighting bulbs & wires' },
 ];
 
 const SEED_MATTI: MattiTrolleyRecord[] = [
@@ -368,7 +366,7 @@ const SEED_ATTENDANCE: EmployeeAttendance[] = [
 ];
 
 // Bhatta Storage Versioning for clean, accurate calculations
-const CURRENT_DATA_VERSION = 'v6_matti_fuel_today_sync';
+const CURRENT_DATA_VERSION = 'v7_integrated_expenses';
 if (typeof window !== 'undefined') {
   try {
     const savedVersion = localStorage.getItem('bhatta_data_version');
@@ -1120,6 +1118,8 @@ export const bhattaService = {
     const directExpenses = this.getExpenses();
     const staffSalaries = this.getStaffSalaries().filter(s => s.status === 'Paid');
     const laborAdvances = this.getAdvances().filter(a => a.status !== 'Unpaid');
+    const mattiRecords = this.getMattiRecords();
+    const fuelRecords = this.getFuelRecords();
     const emps = this.getEmployees();
 
     const mappedSalaries: DailyExpense[] = [
@@ -1129,7 +1129,7 @@ export const bhattaService = {
         category_id: 6,
         category_name: 'Staff Salary',
         expense_date: s.payment_date,
-        amount: s.paid_amount || s.net_payable,
+        amount: Number(s.paid_amount || s.net_payable) || 0,
         payment_mode: 'Cash' as const,
         paid_by: 'Munshi Sarwar',
         description: `Staff Salary for ${s.month_period} (Advance Deducted: Rs. ${s.advance_deducted.toLocaleString()})`,
@@ -1143,7 +1143,7 @@ export const bhattaService = {
           category_id: 6,
           category_name: 'Staff Salary',
           expense_date: a.advance_date,
-          amount: a.amount_paid,
+          amount: Number(a.amount_paid) || 0,
           payment_mode: 'Cash' as const,
           paid_by: 'Munshi Sarwar',
           description: `Worker Advance: ${a.remarks || 'Advance payout'}`,
@@ -1152,7 +1152,41 @@ export const bhattaService = {
       }),
     ];
 
-    return [...directExpenses, ...mappedSalaries].sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+    const mappedMatti: DailyExpense[] = mattiRecords.map(m => ({
+      id: -3000 - m.id,
+      title: `مٹی ٹرالی - ${m.supplier_name || 'سپلائر'} (${m.trolley_count} ٹرالی)`,
+      category_id: 8,
+      category_name: 'Matti Trolley',
+      expense_date: m.entry_date,
+      amount: Number(m.paid_amount !== undefined && m.paid_amount > 0 ? m.paid_amount : m.total_amount) || Number(m.total_amount) || 0,
+      payment_mode: 'Cash' as const,
+      paid_by: 'Munshi Sarwar',
+      description: `مٹی ٹرالی کھاتہ: ${m.trolley_count} ٹرالیاں @ Rs. ${m.rate_per_trolley} = Rs. ${m.total_amount.toLocaleString()} (ادا شدہ: Rs. ${(m.paid_amount || 0).toLocaleString()})${m.remarks ? ' - ' + m.remarks : ''}`,
+      is_salary_mapped: true,
+    }));
+
+    const fuelItemLabels: Record<string, string> = {
+      'Lakri': 'لکڑی (Wood)',
+      'Kuila': 'کوئلہ (Coal)',
+      'Masala_Bhura': 'مسالحہ / بھورا (Bhoosa)',
+    };
+
+    const mappedFuel: DailyExpense[] = fuelRecords.map(f => ({
+      id: -4000 - f.id,
+      title: `${fuelItemLabels[f.item_type] || f.item_type} - ${f.supplier_name || 'سپلائر'}`,
+      category_id: 2,
+      category_name: 'Generator & Fuel',
+      expense_date: f.entry_date,
+      amount: Number(f.paid_amount !== undefined && f.paid_amount > 0 ? f.paid_amount : f.total_amount) || Number(f.total_amount) || 0,
+      payment_mode: 'Cash' as const,
+      paid_by: 'Munshi Sarwar',
+      description: `ایندھن/کوئلہ کھاتہ: ${f.quantity} مقدار @ Rs. ${f.unit_rate} = Rs. ${f.total_amount.toLocaleString()} (ادا شدہ: Rs. ${(f.paid_amount !== undefined ? f.paid_amount : f.total_amount).toLocaleString()})${f.remarks ? ' - ' + f.remarks : ''}`,
+      is_salary_mapped: true,
+    }));
+
+    return [...directExpenses, ...mappedSalaries, ...mappedMatti, ...mappedFuel].sort(
+      (a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime()
+    );
   },
 
   // Executive Dashboard Aggregation
@@ -1285,6 +1319,21 @@ export const bhattaService = {
         totalSalariesRemaining,
         totalAllExpenses,
         netProfitOrLoss,
+      },
+      expenseBreakdown: {
+        totalAllExpenses,
+        salaries: totalLaborCost + totalStaffSalaryPaid,
+        salariesPaid: totalSalariesPaid,
+        salariesRemaining: totalSalariesRemaining,
+        matti: totalMattiCost,
+        mattiPaid: totalMattiPaid,
+        mattiPending: totalMattiPending,
+        mattiTrolleys: totalMattiTrolleys,
+        fuel: totalFuelCost,
+        fuelPaid: totalFuelPaid,
+        fuelPending: totalFuelPending,
+        fuelQuantity: totalFuelQuantity,
+        generalExpenses: totalGeneralExpenses,
       },
       matti: {
         totalBill: totalMattiBill,
