@@ -463,19 +463,9 @@ export function SalesInvoiceBilling() {
           </p>
         </div>
 
-        {/* Global Date Filter & Create Button */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="shrink-0 max-w-full">
-            <DateRangeFilter onChange={handleDateFilterChange} />
-          </div>
-
-          <button
-            onClick={handleOpenCreate}
-            className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
-          >
-            <PlusCircle size={15} className="shrink-0" />
-            <span>{isUrdu ? '+ نیا بل بنائیں' : '+ Create Sales Invoice'}</span>
-          </button>
+        {/* Global Date Filter Only */}
+        <div className="shrink-0 max-w-full">
+          <DateRangeFilter onChange={handleDateFilterChange} />
         </div>
       </div>
 
@@ -534,22 +524,13 @@ export function SalesInvoiceBilling() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownloadSalesInvoicesPDF}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 bg-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
-          >
-            <Download size={14} className="text-[#1D4ED8]" />
-            <span>PDF</span>
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-700 bg-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
-          >
-            <Printer size={14} />
-            <span>Print</span>
-          </button>
-        </div>
+        <button
+          onClick={handleOpenCreate}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#1D4ED8] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
+        >
+          <PlusCircle size={15} className="shrink-0" />
+          <span>{isUrdu ? '+ نیا بل بنائیں (Create Invoice)' : '+ Create Sales Invoice'}</span>
+        </button>
       </div>
 
       {/* Invoices Table */}
